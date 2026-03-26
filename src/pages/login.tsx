@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,6 +12,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 /* =========================================
    SCHEMAS DE VALIDAÇÃO (ZOD)
@@ -71,6 +72,8 @@ const registerSchema = z
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
 
+  const navigate = useNavigate();
+
   // 1. Instância do Hook Form para Login
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -111,7 +114,8 @@ export default function AuthScreen() {
 
       alert("Login efetuado com sucesso!");
       // Aqui você normalmente redirecionaria o usuário:
-      // navigate("/dashboard");
+
+      navigate("/define-objective"); // Redireciona para a próxima etapa da avaliação
     } catch (error) {
       console.error("Erro no login:", error);
       if (

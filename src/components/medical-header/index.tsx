@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 // 1. Variáveis de animação para o efeito cascata
 const containerVariants = {
@@ -23,6 +24,8 @@ const itemVariants = {
 };
 
 function MedicalCannabisHero() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-[#FDF9F3] flex flex-col justify-center items-center font-sans overflow-hidden">
       <div className="w-full max-w-screen-2xl grid grid-cols-1 md:grid-cols-2 gap-12 px-6 md:px-12 lg:px-24 py-16 md:py-24">
@@ -66,6 +69,7 @@ function MedicalCannabisHero() {
             className="flex flex-col sm:flex-row flex-wrap gap-4 mt-12 md:mt-16 justify-center md:justify-start"
           >
             <motion.button
+              onClick={() => navigate("/login")}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               className="bg-[#34C759] text-[#FDF9F3] px-10 py-4 rounded-lg font-extrabold text-lg hover:bg-[#2eb350] transition flex items-center justify-center gap-2"
@@ -90,6 +94,7 @@ function MedicalCannabisHero() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               className="border-2 border-[#34C759] text-[#34C759] px-10 py-4 rounded-lg font-extrabold text-lg hover:bg-[#34C759]/10 transition flex items-center justify-center gap-2"
+              onClick={() => navigate("/login")}
             >
               ÁREA DO PACIENTE
               <svg
