@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 // Variáveis de animação para manter o padrão suave da Apple
 const titleVariants = {
@@ -21,6 +22,8 @@ const cardVariants = {
 };
 
 const HowItWorks = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="bg-[#FDF9F3] py-24 px-6 md:px-12 lg:px-24 font-sans overflow-hidden">
       <div className="max-w-7xl mx-auto">
@@ -277,6 +280,7 @@ const HowItWorks = () => {
 
               {/* Botão de Ação com Hover */}
               <motion.button
+                onClick={() => navigate("/login")}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="w-full sm:w-auto self-start mt-4 bg-[#34C759] text-white px-8 py-4 rounded-md font-bold text-lg hover:bg-[#2eb350] transition-colors shadow-[0_0_15px_rgba(52,199,89,0.3)] flex items-center justify-center gap-2"

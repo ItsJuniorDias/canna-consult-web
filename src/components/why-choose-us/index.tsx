@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const reasons = [
   "Uma das plataformas mais seguras do país",
@@ -32,6 +33,8 @@ const itemVariants = {
 };
 
 const WhyChooseUs = () => {
+  const navigate = useNavigate();
+
   return (
     // Fundo off-white mantendo a consistência do site
     <section className="bg-[#FDF9F3] py-24 px-6 md:px-12 lg:px-24 font-sans overflow-hidden">
@@ -128,6 +131,7 @@ const WhyChooseUs = () => {
             </p>
 
             <motion.button
+              onClick={() => navigate("/login")}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="whitespace-nowrap w-full md:w-auto bg-[#34C759] text-white px-8 py-4 rounded-md font-bold text-lg hover:bg-[#2eb350] transition-colors shadow-[0_0_20px_rgba(52,199,89,0.3)] hover:shadow-[0_0_25px_rgba(52,199,89,0.5)] flex items-center justify-center gap-2 flex-shrink-0"

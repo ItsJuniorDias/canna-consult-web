@@ -1,19 +1,17 @@
-import AboutDoctor from "./components/about-doctor";
-import Footer from "./components/footer";
-import Header from "./components/header";
-import HowItWorks from "./components/how-its-works";
-import MedicalCannabisHero from "./components/medical-header";
-import WhyChooseUs from "./components/why-choose-us";
+import Home from "./pages/home";
+import Login from "./pages/login";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
-      <MedicalCannabisHero />
-      <HowItWorks />
-      <WhyChooseUs />
-      <AboutDoctor />
-      <Footer />
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </Router>
     </div>
   );
 }

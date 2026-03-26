@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const headerLinks = ["Recursos", "Tratamentos", "Médicos", "Sobre", "Contato"];
 
 const Header = () => {
+  const navigate = useNavigate();
+
   return (
     // Fundo translúcido claro (estilo barra de navegação do macOS/iOS)
     <motion.header
@@ -46,7 +49,7 @@ const Header = () => {
         {/* Ação Principal - Botão verde iOS */}
         <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
           <a
-            href="#"
+            onClick={() => navigate("/login")}
             className="rounded-md bg-[#34C759] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#2eb350] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#34C759] focus:ring-offset-2"
           >
             Iniciar Avaliação
