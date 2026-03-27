@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import api from "../../service/axios";
 
 export default function ConsultaCheckout() {
   const [isLoading, setIsLoading] = useState(false);
@@ -8,13 +9,13 @@ export default function ConsultaCheckout() {
     setIsLoading(true);
     try {
       // Endpoint da sua API que cria a sessão do Stripe Checkout
-      const response = await fetch("/api/checkout_sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: "price_consulta_12990" }), // Substitua pelo seu Price ID
+      const response = await api.post("/api/checkout_sessions", {
+        priceId: "price_1TFYHERB4hnPW0iSEfHXhuni", // Substitua pelo seu Price ID
       });
 
-      const data = await response.json();
+      const data = response.data;
+
+      console.log("Resposta do backend:", data);
 
       if (data.url) {
         window.location.href = data.url;
