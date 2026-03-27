@@ -34,7 +34,6 @@ export default function ConsultaCheckout() {
       icone: <DocumentIcon />,
       texto: "Receita, pedidos de exames e atestado digitais",
     },
-    { icone: <VideoIcon />, texto: "Atendimento seguro via telemedicina" },
   ];
 
   return (
