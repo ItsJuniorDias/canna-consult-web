@@ -1,9 +1,11 @@
+import ChatScreen from "./pages/chat";
 import DefineObjetive from "./pages/define-objetive";
 import HistoryHealth from "./pages/history-health";
 import Home from "./pages/home";
 import InfoPhisical from "./pages/info-phisical";
 import Login from "./pages/login";
 import MentalHealth from "./pages/mental-health";
+import Paywall from "./pages/paywall";
 import Preference from "./pages/preference";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -20,6 +22,8 @@ function App() {
           <Route path="/mental-health" element={<MentalHealth />} />
           <Route path="/info-phisical" element={<InfoPhisical />} />
           <Route path="/preference" element={<Preference />} />
+          <Route path="/chat" element={<ChatScreen />} />
+          <Route path="/paywall" element={<Paywall />} />
         </Routes>
       </Router>
     </div>

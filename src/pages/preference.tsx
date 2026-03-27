@@ -78,7 +78,7 @@ export default function Preference() {
       );
 
       // Redireciona para a tela inicial do paciente (Ajuste a rota conforme necessário)
-      navigate("/chat");
+      navigate("/paywall");
     } catch (error) {
       console.error("Erro ao salvar preferências:", error);
       alert("Ocorreu um erro ao finalizar. Tente novamente.");
