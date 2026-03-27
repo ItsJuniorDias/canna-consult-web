@@ -9,8 +9,13 @@ import {
   Heart,
   Minus,
   Plus,
+  Loader2, // Importando o ícone de loading
 } from "lucide-react";
 import { motion } from "framer-motion";
+
+// IMPORTAÇÕES DO FIREBASE (Ajuste o caminho conforme seu projeto)
+import { auth, db } from "../../firebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
 
 const productPreferences = [
   { id: "flores", label: "Flores", icon: <Leaf size={28} /> },
@@ -27,6 +32,7 @@ export default function Preference() {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [duration, setDuration] = useState(3);
   const [investment, setInvestment] = useState(1000);
+  const [isLoading, setIsLoading] = useState(false); // Estado de loading
 
   // Handlers
   const toggleProduct = (id) => {
@@ -40,6 +46,45 @@ export default function Preference() {
 
   const handleSliderChange = (e) => {
     setInvestment(Number(e.target.value));
+  };
+
+  // Função para salvar no Firebase e finalizar o fluxo
+  const handleFinish = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.error("Nenhum usuário logado encontrado.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const patientRef = doc(db, "patients", user.uid);
+
+      // Salvamos as preferências e adicionamos uma flag de onboarding concluído
+      await setDoc(
+        patientRef,
+        {
+          preferences: {
+            products: selectedProducts,
+            durationInMonths: duration,
+            monthlyInvestment: investment,
+          },
+          onboardingCompleted: true, // Flag útil para saber que o usuário terminou o fluxo
+          updatedAt: new Date(),
+        },
+        { merge: true },
+      );
+
+      // Redireciona para a tela inicial do paciente (Ajuste a rota conforme necessário)
+      navigate("/chat");
+    } catch (error) {
+      console.error("Erro ao salvar preferências:", error);
+      alert("Ocorreu um erro ao finalizar. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Cálculo para pintar o background do slider de verde dinamicamente
@@ -64,7 +109,12 @@ export default function Preference() {
         >
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-4 py-2 -ml-4 hover:bg-gray-200/50 rounded-full transition-colors text-gray-600 hover:text-gray-900"
+            disabled={isLoading}
+            className={`flex items-center gap-2 px-4 py-2 -ml-4 rounded-full transition-colors ${
+              isLoading
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-200/50"
+            }`}
           >
             <ArrowLeft size={20} />
             <span className="hidden sm:inline font-medium text-sm">Voltar</span>
@@ -105,11 +155,12 @@ export default function Preference() {
                 <button
                   key={product.id}
                   onClick={() => toggleProduct(product.id)}
+                  disabled={isLoading}
                   className={`flex flex-col items-center justify-center p-6 rounded-[24px] transition-all duration-300 ease-out border-2 aspect-square ${
                     isSelected
                       ? "bg-white border-[#34C759] shadow-md -translate-y-1"
                       : "bg-white/70 border-transparent hover:bg-white hover:shadow-md hover:-translate-y-1 hover:border-gray-200"
-                  }`}
+                  } ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
                 >
                   <div
                     className={`mb-4 transition-colors duration-300 ${
@@ -145,16 +196,28 @@ export default function Preference() {
               <div className="flex items-center gap-6">
                 <button
                   onClick={decreaseDuration}
-                  className="w-12 h-12 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full transition-colors active:scale-95"
+                  disabled={isLoading}
+                  className={`w-12 h-12 flex items-center justify-center rounded-full transition-colors ${
+                    isLoading
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-800 active:scale-95"
+                  }`}
                 >
                   <Minus size={20} />
                 </button>
-                <span className="text-xl font-semibold w-24 text-center">
+                <span
+                  className={`text-xl font-semibold w-24 text-center ${isLoading ? "text-gray-400" : "text-gray-900"}`}
+                >
                   {duration} {duration === 1 ? "mês" : "meses"}
                 </span>
                 <button
                   onClick={increaseDuration}
-                  className="w-12 h-12 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full transition-colors active:scale-95"
+                  disabled={isLoading}
+                  className={`w-12 h-12 flex items-center justify-center rounded-full transition-colors ${
+                    isLoading
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-800 active:scale-95"
+                  }`}
                 >
                   <Plus size={20} />
                 </button>
@@ -180,7 +243,8 @@ export default function Preference() {
                 step="100"
                 value={investment}
                 onChange={handleSliderChange}
-                className="w-full h-2 rounded-full appearance-none outline-none cursor-pointer mb-8"
+                disabled={isLoading}
+                className={`w-full h-2 rounded-full appearance-none outline-none mb-8 ${isLoading ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
                 style={{
                   background: `linear-gradient(to right, #34C759 ${sliderPercentage}%, #E5E7EB ${sliderPercentage}%)`,
                 }}
@@ -200,7 +264,9 @@ export default function Preference() {
                 }
               `}</style>
 
-              <div className="text-3xl font-bold text-gray-900">
+              <div
+                className={`text-3xl font-bold ${isLoading ? "text-gray-400" : "text-gray-900"}`}
+              >
                 R$ {investment.toLocaleString("pt-BR")}
                 <span className="text-lg font-medium text-gray-400 ml-1">
                   /mês
@@ -219,18 +285,33 @@ export default function Preference() {
         >
           <button
             onClick={() => navigate(-1)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-lg bg-gray-100 hover:bg-gray-200 text-gray-800 transition-all duration-300 active:scale-[0.98]"
+            disabled={isLoading}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 ${
+              isLoading
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-800 active:scale-[0.98]"
+            }`}
           >
             Voltar
           </button>
 
           <button
-            onClick={() =>
-              console.log({ selectedProducts, duration, investment })
-            }
-            className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-12 py-4 rounded-full font-bold text-lg bg-[#34C759] hover:bg-[#2eb350] text-white shadow-lg shadow-[#34C759]/30 transition-all duration-300 active:scale-[0.98]"
+            onClick={handleFinish}
+            disabled={isLoading}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-3 px-12 py-4 rounded-full font-bold text-lg transition-all duration-300 ${
+              isLoading
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-[#34C759] hover:bg-[#2eb350] text-white shadow-lg shadow-[#34C759]/30 active:scale-[0.98]"
+            }`}
           >
-            Finalizar
+            {isLoading ? (
+              <>
+                Finalizando...
+                <Loader2 size={20} className="animate-spin text-white" />
+              </>
+            ) : (
+              "Finalizar"
+            )}
           </button>
         </motion.div>
       </motion.div>

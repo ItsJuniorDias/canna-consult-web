@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+
+// IMPORTAÇÕES DO FIREBASE (Ajuste o caminho conforme seu projeto)
+import { auth, db } from "../../firebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
 
 const mentalHealthOptions = [
   { id: "tristeza", label: "Sente muita tristeza" },
@@ -15,11 +19,46 @@ const mentalHealthOptions = [
 export default function MentalHealth() {
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState([]);
+  const [isLoading, setIsLoading] = useState(false); // Estado de loading
 
   const toggleSelection = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
+  };
+
+  // Função para salvar no Firebase e avançar
+  const handleNext = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.error("Nenhum usuário logado encontrado.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const patientRef = doc(db, "patients", user.uid);
+
+      // Salvamos o array de seleções em 'mentalHealth'
+      // usando merge: true para preservar os passos 1 e 2
+      await setDoc(
+        patientRef,
+        {
+          mentalHealth: selectedIds,
+          updatedAt: new Date(),
+        },
+        { merge: true },
+      );
+
+      navigate("/info-phisical");
+    } catch (error) {
+      console.error("Erro ao salvar dados de saúde mental:", error);
+      alert("Ocorreu um erro ao salvar. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Variáveis de animação para manter o código limpo
@@ -42,7 +81,12 @@ export default function MentalHealth() {
         >
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-4 py-2 -ml-4 hover:bg-gray-200/50 rounded-full transition-colors text-gray-600 hover:text-gray-900"
+            disabled={isLoading}
+            className={`flex items-center gap-2 px-4 py-2 -ml-4 rounded-full transition-colors ${
+              isLoading
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-200/50"
+            }`}
           >
             <ArrowLeft size={20} />
             <span className="hidden sm:inline font-medium text-sm">Voltar</span>
@@ -53,7 +97,7 @@ export default function MentalHealth() {
           <div className="w-[88px]" />
         </motion.header>
 
-        {/* Textos Principais com a animação que você sugeriu */}
+        {/* Textos Principais */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
@@ -94,11 +138,12 @@ export default function MentalHealth() {
                 <button
                   key={option.id}
                   onClick={() => toggleSelection(option.id)}
+                  disabled={isLoading}
                   className={`px-6 py-3.5 rounded-full text-[15px] font-medium transition-all duration-300 ease-out border-2 active:scale-[0.98] ${
                     isSelected
                       ? "bg-white border-[#34C759] text-[#34C759] shadow-sm"
                       : "bg-gray-100/80 border-transparent text-gray-700 hover:bg-white hover:shadow-sm hover:border-gray-200"
-                  }`}
+                  } ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
                 >
                   {option.label}
                 </button>
@@ -116,17 +161,36 @@ export default function MentalHealth() {
         >
           <button
             onClick={() => navigate(-1)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-lg bg-gray-100 hover:bg-gray-200 text-gray-800 transition-all duration-300 active:scale-[0.98]"
+            disabled={isLoading}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 ${
+              isLoading
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-800 active:scale-[0.98]"
+            }`}
           >
             Voltar
           </button>
 
           <button
-            onClick={() => navigate("/info-phisical")}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-10 py-4 rounded-full font-bold text-lg bg-[#34C759] hover:bg-[#2eb350] text-white shadow-lg shadow-[#34C759]/30 transition-all duration-300 active:scale-[0.98]"
+            onClick={handleNext}
+            disabled={isLoading}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-3 px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 ${
+              isLoading
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-[#34C759] hover:bg-[#2eb350] text-white shadow-lg shadow-[#34C759]/30 active:scale-[0.98]"
+            }`}
           >
-            Avançar
-            <ArrowRight size={20} className="text-white" />
+            {isLoading ? (
+              <>
+                Salvando...
+                <Loader2 size={20} className="animate-spin text-gray-400" />
+              </>
+            ) : (
+              <>
+                Avançar
+                <ArrowRight size={20} className="text-white" />
+              </>
+            )}
           </button>
         </motion.div>
       </motion.div>

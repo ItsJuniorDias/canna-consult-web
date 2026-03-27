@@ -10,64 +10,69 @@ import {
   Zap,
   Plus,
   ArrowRight,
+  Loader2, // Importando um ícone de loading
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+// IMPORTAÇÕES DO FIREBASE (Ajuste o caminho './firebase' para o arquivo onde você inicializa o Firebase)
+import { auth, db } from "../../firebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
 
 const objectives = [
   {
     id: "sono",
     title: "Melhora do Sono",
     description: "Ajuda para dormir melhor",
-    icon: <Moon size={24} className="text-gray-600" />,
+    icon: <Moon size={24} />,
   },
   {
     id: "calma",
     title: "Mais Calma",
     description: "Controle da agitação diária",
-    icon: <Wind size={24} className="text-gray-600" />,
+    icon: <Wind size={24} />,
   },
   {
     id: "foco",
     title: "Aumento do Foco",
     description: "Melhorar a concentração",
-    icon: <Target size={24} className="text-gray-600" />,
+    icon: <Target size={24} />,
   },
   {
     id: "estresse",
     title: "Menos Estresse",
     description: "Reduzir o estresse diário",
-    icon: <Smile size={24} className="text-gray-600" />,
+    icon: <Smile size={24} />,
   },
   {
     id: "ansiedade",
     title: "Ansiedade",
     description: "Alívio dos sintomas",
-    icon: <Activity size={24} className="text-gray-600" />,
+    icon: <Activity size={24} />,
   },
   {
     id: "dor",
     title: "Dor Crônica",
     description: "Reduzir dores persistentes",
-    icon: <Thermometer size={24} className="text-gray-600" />,
+    icon: <Thermometer size={24} />,
   },
   {
     id: "tdah",
     title: "TDAH",
     description: "Atenção e foco para TDAH",
-    icon: <Zap size={24} className="text-gray-600" />,
+    icon: <Zap size={24} />,
   },
   {
     id: "outro",
     title: "Outro",
     description: "Especificar outro motivo",
-    icon: <Plus size={24} className="text-gray-600" />,
+    icon: <Plus size={24} />,
   },
 ];
 
 export default function DefineObjective() {
   const navigate = useNavigate();
-
   const [selectedIds, setSelectedIds] = useState([]);
+  const [isLoading, setIsLoading] = useState(false); // Estado para controlar o loading do botão
 
   const toggleSelection = (id) => {
     setSelectedIds((prev) =>
@@ -77,22 +82,64 @@ export default function DefineObjective() {
 
   const hasSelection = selectedIds.length > 0;
 
+  // Função para salvar no Firebase e avançar
+  const handleNext = async () => {
+    if (!hasSelection) return;
+
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.error("Nenhum usuário logado encontrado.");
+      // Opcional: Redirecionar para o login
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Referência para o documento do usuário na coleção 'patients'
+      const patientRef = doc(db, "patients", user.uid);
+
+      // Usamos setDoc com { merge: true } para não sobrescrever outros dados
+      // que o paciente já possa ter no documento (como nome, email, etc)
+      await setDoc(
+        patientRef,
+        {
+          objectives: selectedIds,
+          updatedAt: new Date(),
+        },
+        { merge: true },
+      );
+
+      // Avança para a próxima tela após salvar com sucesso
+      navigate("/history-health");
+    } catch (error) {
+      console.error("Erro ao salvar os objetivos:", error);
+      alert("Ocorreu um erro ao salvar. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FDF9F3] text-gray-900 font-sans flex items-center justify-center p-6 sm:p-10">
       <div className="w-full max-w-5xl flex flex-col bg-white/40 md:p-12 p-6 rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-sm border border-white/60">
-        {/* Header - Mais espaçado para web */}
+        {/* Header */}
         <header className="flex items-center justify-between mb-12">
-          <button className="flex items-center gap-2 px-4 py-2 -ml-4 hover:bg-gray-200/50 rounded-full transition-colors text-gray-600 hover:text-gray-900">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 px-4 py-2 -ml-4 hover:bg-gray-200/50 rounded-full transition-colors text-gray-600 hover:text-gray-900"
+          >
             <ArrowLeft size={20} />
             <span className="hidden sm:inline font-medium text-sm">Voltar</span>
           </button>
           <span className="text-sm font-semibold text-gray-500 tracking-wide bg-gray-200/50 px-4 py-1.5 rounded-full">
             Passo 1 de 5
           </span>
-          <div className="w-[88px]" /> {/* Spacer para equilibrar o layout */}
+          <div className="w-[88px]" />
         </header>
 
-        {/* Textos Principais - Maior impacto visual em telas grandes */}
+        {/* Textos Principais */}
         <div className="mb-12 max-w-2xl">
           <h1 className="text-4xl md:text-5xl leading-tight font-bold tracking-tight mb-4 text-gray-900">
             Defina seu objetivo
@@ -103,7 +150,7 @@ export default function DefineObjective() {
           </p>
         </div>
 
-        {/* Seção de Cards - Grid Responsivo (1, 2, 3 ou 4 colunas) */}
+        {/* Seção de Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {objectives.map((obj) => {
             const isSelected = selectedIds.includes(obj.id);
@@ -142,22 +189,31 @@ export default function DefineObjective() {
           })}
         </div>
 
-        {/* Action Area - Botão alinhado à direita para desktop */}
+        {/* Action Area */}
         <div className="mt-16 pt-8 border-t border-gray-200/60 flex justify-end">
           <button
-            onClick={() => navigate("/history-health")}
-            disabled={!hasSelection}
+            onClick={handleNext}
+            disabled={!hasSelection || isLoading}
             className={`flex items-center gap-3 px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 ${
-              hasSelection
+              hasSelection && !isLoading
                 ? "bg-[#34C759] hover:bg-[#2eb350] text-white shadow-lg shadow-[#34C759]/30 transform active:scale-[0.98]"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            Avançar
-            <ArrowRight
-              size={20}
-              className={hasSelection ? "text-white" : "text-gray-400"}
-            />
+            {isLoading ? (
+              <>
+                Salvando...
+                <Loader2 size={20} className="animate-spin text-gray-400" />
+              </>
+            ) : (
+              <>
+                Avançar
+                <ArrowRight
+                  size={20}
+                  className={hasSelection ? "text-white" : "text-gray-400"}
+                />
+              </>
+            )}
           </button>
         </div>
       </div>

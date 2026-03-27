@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, User, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+
+// IMPORTAÇÕES DO FIREBASE (Ajuste o caminho conforme seu projeto)
+import { auth, db } from "../../firebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function InfoPhysical() {
   const navigate = useNavigate();
@@ -12,6 +16,8 @@ export default function InfoPhysical() {
     peso: "",
     sexo: null, // 'masculino', 'feminino', ou 'outros'
   });
+
+  const [isLoading, setIsLoading] = useState(false); // Estado de loading
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -24,11 +30,51 @@ export default function InfoPhysical() {
     setFormData((prev) => ({ ...prev, sexo: gender }));
   };
 
-  const easeCurve = [0.22, 1, 0.36, 1];
-
   // Verifica se todos os campos estão preenchidos para liberar o avanço
   const isFormComplete =
     formData.altura !== "" && formData.peso !== "" && formData.sexo !== null;
+
+  // Função para salvar no Firebase e avançar
+  const handleNext = async () => {
+    if (!isFormComplete) return;
+
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.error("Nenhum usuário logado encontrado.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const patientRef = doc(db, "patients", user.uid);
+
+      // Salvamos as informações físicas em 'physicalInfo'
+      // usando merge: true para não sobrescrever os passos anteriores
+      await setDoc(
+        patientRef,
+        {
+          physicalInfo: {
+            altura: formData.altura,
+            peso: formData.peso,
+            sexo: formData.sexo,
+          },
+          updatedAt: new Date(),
+        },
+        { merge: true },
+      );
+
+      navigate("/preference");
+    } catch (error) {
+      console.error("Erro ao salvar informações físicas:", error);
+      alert("Ocorreu um erro ao salvar. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const easeCurve = [0.22, 1, 0.36, 1];
 
   return (
     <div className="min-h-screen bg-[#FDF9F3] text-gray-900 font-sans flex items-center justify-center p-6 sm:p-10 overflow-hidden">
@@ -47,7 +93,12 @@ export default function InfoPhysical() {
         >
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-4 py-2 -ml-4 hover:bg-gray-200/50 rounded-full transition-colors text-gray-600 hover:text-gray-900"
+            disabled={isLoading}
+            className={`flex items-center gap-2 px-4 py-2 -ml-4 rounded-full transition-colors ${
+              isLoading
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-200/50"
+            }`}
           >
             <ArrowLeft size={20} />
             <span className="hidden sm:inline font-medium text-sm">Voltar</span>
@@ -98,8 +149,13 @@ export default function InfoPhysical() {
                     name="altura"
                     value={formData.altura}
                     onChange={handleInputChange}
+                    disabled={isLoading}
                     placeholder="1,80"
-                    className="w-full bg-gray-100/80 text-gray-900 text-lg rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-[#34C759] focus:bg-white transition-all placeholder-gray-400"
+                    className={`w-full bg-gray-100/80 text-gray-900 text-lg rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-[#34C759] transition-all placeholder-gray-400 ${
+                      isLoading
+                        ? "opacity-70 cursor-not-allowed"
+                        : "focus:bg-white"
+                    }`}
                   />
                   <span className="absolute right-5 text-gray-500 font-medium">
                     m
@@ -118,8 +174,13 @@ export default function InfoPhysical() {
                     name="peso"
                     value={formData.peso}
                     onChange={handleInputChange}
+                    disabled={isLoading}
                     placeholder="70"
-                    className="w-full bg-gray-100/80 text-gray-900 text-lg rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-[#34C759] focus:bg-white transition-all placeholder-gray-400"
+                    className={`w-full bg-gray-100/80 text-gray-900 text-lg rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-[#34C759] transition-all placeholder-gray-400 ${
+                      isLoading
+                        ? "opacity-70 cursor-not-allowed"
+                        : "focus:bg-white"
+                    }`}
                   />
                   <span className="absolute right-5 text-gray-500 font-medium">
                     kg
@@ -149,20 +210,31 @@ export default function InfoPhysical() {
                   <button
                     key={option.id}
                     onClick={() => handleGenderSelect(option.id)}
-                    className="flex items-center gap-4 py-4 w-full text-left group transition-colors"
+                    disabled={isLoading}
+                    className={`flex items-center gap-4 py-4 w-full text-left group transition-colors ${
+                      isLoading ? "cursor-not-allowed opacity-70" : ""
+                    }`}
                   >
                     <div
-                      className={`p-2 rounded-full transition-colors ${isSelected ? "bg-[#34C759]/10 text-[#34C759]" : "bg-transparent text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-600"}`}
+                      className={`p-2 rounded-full transition-colors ${
+                        isSelected
+                          ? "bg-[#34C759]/10 text-[#34C759]"
+                          : "bg-transparent text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-600"
+                      }`}
                     >
                       <User size={20} />
                     </div>
                     <span
-                      className={`text-[17px] font-medium transition-colors ${isSelected ? "text-gray-900" : "text-gray-600 group-hover:text-gray-900"}`}
+                      className={`text-[17px] font-medium transition-colors ${
+                        isSelected
+                          ? "text-gray-900"
+                          : "text-gray-600 group-hover:text-gray-900"
+                      }`}
                     >
                       {option.label}
                     </span>
 
-                    {/* Indicador visual de seleção (opcional, estilo checkmark invisible) */}
+                    {/* Indicador visual de seleção */}
                     {isSelected && (
                       <div className="ml-auto w-2 h-2 rounded-full bg-[#34C759]" />
                     )}
@@ -182,25 +254,39 @@ export default function InfoPhysical() {
         >
           <button
             onClick={() => navigate(-1)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-lg bg-gray-100 hover:bg-gray-200 text-gray-800 transition-all duration-300 active:scale-[0.98]"
+            disabled={isLoading}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 ${
+              isLoading
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-800 active:scale-[0.98]"
+            }`}
           >
             Voltar
           </button>
 
           <button
-            onClick={() => navigate("/preference")}
-            disabled={!isFormComplete}
+            onClick={handleNext}
+            disabled={!isFormComplete || isLoading}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-3 px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 ${
-              isFormComplete
+              isFormComplete && !isLoading
                 ? "bg-[#34C759] hover:bg-[#2eb350] text-white shadow-lg shadow-[#34C759]/30 active:scale-[0.98]"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            Avançar
-            <ArrowRight
-              size={20}
-              className={isFormComplete ? "text-white" : "text-gray-400"}
-            />
+            {isLoading ? (
+              <>
+                Salvando...
+                <Loader2 size={20} className="animate-spin text-gray-400" />
+              </>
+            ) : (
+              <>
+                Avançar
+                <ArrowRight
+                  size={20}
+                  className={isFormComplete ? "text-white" : "text-gray-400"}
+                />
+              </>
+            )}
           </button>
         </motion.div>
       </motion.div>
