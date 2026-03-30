@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
+import { useNavigate } from "react-router-dom"; // 1. Importe o hook de navegação
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -23,6 +24,8 @@ const systemInstruction = `
 `;
 
 export default function ChatScreen() {
+  const navigate = useNavigate(); // 2. Instancie o hook de navegação
+
   const [messages, setMessages] = useState([
     {
       id: "1",
@@ -33,10 +36,8 @@ export default function ChatScreen() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Referência para o final da lista de mensagens
   const messagesEndRef = useRef(null);
 
-  // Efeito que rola a tela para baixo sempre que 'messages' ou 'isLoading' mudarem
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -55,14 +56,11 @@ export default function ChatScreen() {
     setIsLoading(true);
 
     try {
-      // Ajuste para chamar a nova versão flash do Gemini com instruções de sistema
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash", // Recomendo usar o 1.5-flash (o 2.5-flash está em preview dependendo da API key)
+        model: "gemini-2.5-flash", // Atualizado para a versão mais estável/rápida atual
         systemInstruction: systemInstruction,
       });
 
-      // Importante: Tirar a mensagem inicial engessada do histórico se a API do Gemini chiar,
-      // Mas geralmente o 'model' entende.
       const chatHistory = messages.map((msg) => ({
         role: msg.role !== "user" ? "user" : "model",
         parts: [{ text: msg.text }],
@@ -75,7 +73,30 @@ export default function ChatScreen() {
       const result = await chat.sendMessage(userMessage);
       const responseText = result.response.text();
 
-      setMessages((prev) => [...prev, { role: "model", text: responseText }]);
+      // 3. Lógica para detectar o fim da consulta
+      let cleanText = responseText;
+      let isFinished = false;
+
+      if (responseText.includes("[FIM_DA_CONSULTA]")) {
+        isFinished = true;
+        // Limpa a tag para não aparecer na tela do usuário
+        cleanText = responseText.replace("[FIM_DA_CONSULTA]", "").trim();
+      }
+
+      setMessages((prev) => [...prev, { role: "model", text: cleanText }]);
+
+      // 4. Executa o redirecionamento
+      if (isFinished) {
+        // Salva o laudo gerado no localStorage para que a página /pdf-download possa acessá-lo
+        localStorage.setItem("laudoGerado", cleanText);
+
+        // Adiciona um pequeno delay de 3.5 segundos para o usuário ver que o laudo foi gerado
+        setTimeout(() => {
+          navigate("/pdf-download");
+          // Se não estiver usando react-router-dom, comente a linha acima e use a linha abaixo:
+          // window.location.href = "/pdf-download";
+        }, 3500);
+      }
     } catch (error) {
       console.error("Erro ao chamar a API:", error);
       setMessages((prev) => [
@@ -92,14 +113,13 @@ export default function ChatScreen() {
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-[#FDF9F3] font-sans">
-      {/* Cabeçalho */}
+      {/* ... (O restante do seu JSX permanece exatamente igual) ... */}
       <header className="flex-none bg-[#FDF9F3]/80 backdrop-blur-md border-b border-gray-200/60 pt-6 pb-4 px-4 text-center sticky top-0 z-10">
         <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
           Consultório Virtual
         </h1>
       </header>
 
-      {/* Área de Mensagens */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {messages.map((msg, index) => (
           <div
@@ -115,7 +135,6 @@ export default function ChatScreen() {
                   : "bg-white text-gray-800 rounded-2xl rounded-bl-sm border border-gray-100"
               }`}
             >
-              {/* O usuário envia texto normal, a IA pode enviar Markdown */}
               {msg.role === "user" ? (
                 <p className="whitespace-pre-wrap">{msg.text}</p>
               ) : (
@@ -127,7 +146,6 @@ export default function ChatScreen() {
           </div>
         ))}
 
-        {/* Indicador de Digitação */}
         {isLoading && (
           <div className="flex justify-start">
             <div className="bg-white text-gray-400 px-4 py-3 rounded-2xl rounded-bl-sm border border-gray-100 shadow-sm flex items-center gap-1">
@@ -138,11 +156,9 @@ export default function ChatScreen() {
           </div>
         )}
 
-        {/* Âncora invisível para o auto-scroll */}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input de Mensagem */}
       <div className="flex-none bg-[#FDF9F3] p-4 pb-6">
         <form
           onSubmit={handleSendMessage}
