@@ -8,6 +8,7 @@ import MentalHealth from "./pages/mental-health";
 import Paywall from "./pages/paywall";
 import Preference from "./pages/preference";
 import PDFDownload from "./pages/pdf-download";
+import PatientArea from "./pages/patient-area";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -26,6 +27,7 @@ function App() {
           <Route path="/chat" element={<ChatScreen />} />
           <Route path="/paywall" element={<Paywall />} />
           <Route path="/pdf-download" element={<PDFDownload />} />
+          <Route path="/patient-area" element={<PatientArea />} />
         </Routes>
       </Router>
     </div>

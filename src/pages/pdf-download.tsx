@@ -5,11 +5,14 @@ import ReactMarkdown from "react-markdown";
 import { auth, db } from "../../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 export default function PDFDownload() {
   const [laudo, setLaudo] = useState("");
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const navigate = useNavigate(); // 2. Instancie o hook de navegação
 
   useEffect(() => {
     // 1. Recupera o laudo
@@ -45,6 +48,8 @@ export default function PDFDownload() {
     // É recomendado dar um pequeno delay apenas se houverem animações na tela,
     // mas na maioria dos casos o window.print() direto já resolve.
     window.print();
+
+    navigate("/patient-area"); // Redireciona para a área do paciente após a impressão
   };
 
   if (isLoading) {
