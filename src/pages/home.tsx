@@ -1,3 +1,4 @@
+import React from "react";
 import AboutDoctor from "../components/about-doctor";
 import Footer from "../components/footer";
 import Header from "../components/header";
