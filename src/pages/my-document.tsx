@@ -8,18 +8,25 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  Info,
   MessageCircle,
   Leaf,
+  ChevronDown,
+  IdCard,
+  CreditCard,
+  Book,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
 import { set } from "zod";
 
-export default function PatientArea() {
+export default function MyDocuments() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   const navigate = useNavigate();
+  // Estado para controlar a abertura do menu de seleção do documento
+  const [isSelectOpen, setIsSelectOpen] = useState(true);
+
+  const [selectedDocumentType, setSelectedDocumentType] = useState("");
 
   return (
     <div className="flex min-h-screen bg-[#f8f9f8] font-sans text-gray-800">
@@ -35,7 +42,6 @@ export default function PatientArea() {
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1">
-            {/* Active Item - Dashboard */}
             <li>
               <a
                 href="#"
@@ -43,7 +49,7 @@ export default function PatientArea() {
                   e.preventDefault();
                   navigate("/patient-area");
                 }}
-                className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
+                className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <LayoutDashboard size={18} className="mr-3" />
                 <span className="text-sm font-medium">Dashboard</span>
@@ -90,14 +96,15 @@ export default function PatientArea() {
                 <span className="text-sm font-medium">Minhas Consultas</span>
               </a>
             </li>
+            {/* Active Item - Meus Documentos */}
             <li>
               <a
+                href="#"
                 onClick={(e) => {
                   e.preventDefault();
                   navigate("/my-documents");
                 }}
-                href="#"
-                className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
+                className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
               >
                 <Folder size={18} className="mr-3" />
                 <span className="text-sm font-medium">Meus Documentos</span>
@@ -130,7 +137,7 @@ export default function PatientArea() {
               >
                 <HelpCircle size={16} className="mr-3" />
                 <span className="text-xs font-medium">
-                  Precisa de ajuda? Entre em...
+                  Precisa de ajuda? Entre em contato
                 </span>
               </a>
             </li>
@@ -161,59 +168,76 @@ export default function PatientArea() {
       {/* Main Content */}
       <main className="flex-1 p-8">
         <div className="max-w-5xl mx-auto space-y-6">
-          {/* Greeting Card */}
+          {/* Header Card */}
           <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              Olá, Alexandre de paula dias junior
+              Meus Documentos
             </h1>
-            <p className="text-gray-500 text-sm">Seja bem vindo de volta.</p>
+            <p className="text-gray-500 text-sm">
+              Gerencie e acesse todos os seus documentos médicos
+            </p>
           </div>
 
-          {/* Grid Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Receitas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Receitas
-                </h2>
-                <button
-                  onClick={() => navigate("/my-recipes")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
-                >
-                  Ver receitas
-                </button>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-medium">
-                  Nenhuma receita encontrada.
-                </p>
-              </div>
-            </div>
+          {/* Form Card */}
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[400px]">
+            <h2 className="text-lg font-bold text-gray-800 mb-6">
+              Enviar Documento
+            </h2>
 
-            {/* Consultas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Consultas
-                </h2>
+            <div className="max-w-md">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo de Documento <span className="text-red-500">*</span>
+              </label>
+
+              {/* Custom Select Box */}
+              <div className="relative">
                 <button
-                  onClick={() => navigate("/my-consultations")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
+                  type="button"
+                  onClick={() => setIsSelectOpen(!isSelectOpen)}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-left text-sm text-gray-500 flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-[#34C759] focus:border-[#34C759] transition-all"
                 >
-                  Ver todos
+                  {selectedDocumentType || "Selecione o tipo de documento"}
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 transition-transform ${isSelectOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-medium">
-                  Nenhuma consulta encontrada.
-                </p>
+
+                {/* Dropdown Menu */}
+                {isSelectOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-100 rounded-lg shadow-lg z-20 py-1">
+                    <button
+                      onClick={() => {
+                        setSelectedDocumentType("RG");
+                        setIsSelectOpen(false);
+                      }}
+                      className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors bg-gray-50/50"
+                    >
+                      <IdCard size={16} className="mr-3 text-gray-500" />
+                      RG - Registro Geral
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedDocumentType("CNH");
+                        setIsSelectOpen(false);
+                      }}
+                      className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                    >
+                      <CreditCard size={16} className="mr-3 text-gray-500" />
+                      CNH - Carteira Nacional de Habilitação
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedDocumentType("Passaporte");
+                        setIsSelectOpen(false);
+                      }}
+                      className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                    >
+                      <Book size={16} className="mr-3 text-gray-500" />
+                      Passaporte
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -224,7 +248,7 @@ export default function PatientArea() {
         <ModalHelper setIsHelpModalOpen={setIsHelpModalOpen} />
       )}
 
-      {/* Floating Action Button (Chat) */}
+      {/* Floating Action Button */}
       <button className="fixed bottom-8 right-8 w-14 h-14 bg-[#34C759] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2eaa4d] transition-colors z-50">
         <MessageCircle size={24} />
       </button>

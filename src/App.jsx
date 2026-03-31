@@ -9,6 +9,11 @@ import Paywall from "./pages/paywall";
 import Preference from "./pages/preference";
 import PDFDownload from "./pages/pdf-download";
 import PatientArea from "./pages/patient-area";
+import NewConsult from "./pages/new-consult";
+import MyReceipts from "./pages/my-recipes";
+import MyConsultations from "./pages/my-consultations";
+import MyDocuments from "./pages/my-document";
+import Config from "./pages/config";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -28,6 +33,11 @@ function App() {
           <Route path="/paywall" element={<Paywall />} />
           <Route path="/pdf-download" element={<PDFDownload />} />
           <Route path="/patient-area" element={<PatientArea />} />
+          <Route path="/new-consult" element={<NewConsult />} />
+          <Route path="/my-recipes" element={<MyReceipts />} />
+          <Route path="/my-consultations" element={<MyConsultations />} />
+          <Route path="/my-documents" element={<MyDocuments />} />
+          <Route path="/config" element={<Config />} />
         </Routes>
       </Router>
     </div>

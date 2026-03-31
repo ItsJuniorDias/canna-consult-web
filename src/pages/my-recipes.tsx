@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import {
+  Leaf,
   LayoutDashboard,
   CalendarPlus,
   FileText,
@@ -7,19 +8,17 @@ import {
   Folder,
   Settings,
   HelpCircle,
-  LogOut,
-  Info,
   MessageCircle,
-  Leaf,
+  LogOut,
+  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
-import { set } from "zod";
 
-export default function PatientArea() {
+export default function MyRecipes() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // 2. Instancie o hook de navegação
 
   return (
     <div className="flex min-h-screen bg-[#f8f9f8] font-sans text-gray-800">
@@ -35,15 +34,11 @@ export default function PatientArea() {
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1">
-            {/* Active Item - Dashboard */}
             <li>
               <a
+                onClick={() => navigate("/patient-area")} // 3. Use o hook para navegar
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/patient-area");
-                }}
-                className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
+                className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <LayoutDashboard size={18} className="mr-3" />
                 <span className="text-sm font-medium">Dashboard</span>
@@ -51,25 +46,20 @@ export default function PatientArea() {
             </li>
             <li>
               <a
+                onClick={() => navigate("/new-consult")} // 3. Use o hook para navegar
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/new-consult");
-                }}
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <CalendarPlus size={18} className="mr-3" />
                 <span className="text-sm font-medium">Nova Consulta</span>
               </a>
             </li>
+            {/* Active Item */}
             <li>
               <a
+                onClick={() => navigate("/my-recipes")} // 3. Use o hook para navegar
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/my-recipes");
-                }}
-                className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
+                className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
               >
                 <FileText size={18} className="mr-3" />
                 <span className="text-sm font-medium">
@@ -79,11 +69,8 @@ export default function PatientArea() {
             </li>
             <li>
               <a
+                onClick={() => navigate("/my-consultations")} // 3. Use o hook para navegar
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/my-consultations");
-                }}
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <Stethoscope size={18} className="mr-3" />
@@ -92,10 +79,7 @@ export default function PatientArea() {
             </li>
             <li>
               <a
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/my-documents");
-                }}
+                onClick={() => navigate("/my-documents")} // 3
                 href="#"
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
@@ -148,7 +132,7 @@ export default function PatientArea() {
             <li>
               <a
                 href="#"
-                className="flex items-center px-6 py-2 text-gray-500 hover:text-red-500 transition-colors mt-2"
+                className="flex items-center px-6 py-2 text-gray-500 hover:text-[#34C759] transition-colors mt-2"
               >
                 <LogOut size={16} className="mr-3" />
                 <span className="text-xs font-medium">Sair</span>
@@ -161,60 +145,56 @@ export default function PatientArea() {
       {/* Main Content */}
       <main className="flex-1 p-8">
         <div className="max-w-5xl mx-auto space-y-6">
-          {/* Greeting Card */}
+          {/* Header Card */}
           <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              Olá, Alexandre de paula dias junior
+              Minhas Receitas/Laudos
             </h1>
-            <p className="text-gray-500 text-sm">Seja bem vindo de volta.</p>
+            <p className="text-gray-500 text-sm">
+              Aqui você encontra suas receitas disponíveis.
+            </p>
           </div>
 
-          {/* Grid Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Receitas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Receitas
-                </h2>
-                <button
-                  onClick={() => navigate("/my-recipes")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
-                >
-                  Ver receitas
-                </button>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-medium">
-                  Nenhuma receita encontrada.
-                </p>
+          {/* Tabs */}
+          <div className="bg-gray-100/70 p-1.5 rounded-lg flex items-center">
+            <button className="flex-1 bg-white py-2.5 rounded-md shadow-sm text-sm font-semibold text-gray-800 transition-all">
+              Minhas Receitas (0)
+            </button>
+            <button className="flex-1 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-all">
+              Meus Laudos (0)
+            </button>
+          </div>
+
+          {/* Content Area */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 min-h-[450px] flex flex-col">
+            {/* Top Toolbar */}
+            <div className="p-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h2 className="text-lg font-bold text-gray-800">
+                Minhas Receitas
+              </h2>
+
+              {/* Search Input */}
+              <div className="relative w-full sm:w-72">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={16}
+                />
+                <input
+                  type="text"
+                  placeholder="Buscar por receita"
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#34C759] focus:ring-1 focus:ring-[#34C759] transition-all"
+                />
               </div>
             </div>
 
-            {/* Consultas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Consultas
-                </h2>
-                <button
-                  onClick={() => navigate("/my-consultations")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
-                >
-                  Ver todos
-                </button>
+            {/* Empty State Body */}
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className="w-20 h-20 bg-[#9fb99e] rounded-2xl flex items-center justify-center mb-5 opacity-90">
+                <FileText size={40} className="text-white" strokeWidth={1.5} />
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-medium">
-                  Nenhuma consulta encontrada.
-                </p>
-              </div>
+              <p className="text-gray-500 font-medium text-sm">
+                Nenhuma receita cadastrada
+              </p>
             </div>
           </div>
         </div>
@@ -224,8 +204,8 @@ export default function PatientArea() {
         <ModalHelper setIsHelpModalOpen={setIsHelpModalOpen} />
       )}
 
-      {/* Floating Action Button (Chat) */}
-      <button className="fixed bottom-8 right-8 w-14 h-14 bg-[#34C759] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2eaa4d] transition-colors z-50">
+      {/* Floating Action Button */}
+      <button className="fixed bottom-8 right-8 w-14 h-14 bg-[#34C759] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2eaa4d] transition-colors">
         <MessageCircle size={24} />
       </button>
     </div>

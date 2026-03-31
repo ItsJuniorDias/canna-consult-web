@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   LayoutDashboard,
   CalendarPlus,
@@ -8,16 +8,15 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  Info,
   MessageCircle,
   Leaf,
+  Plus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
-import { set } from "zod";
 
-export default function PatientArea() {
-  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+export default function MyConsultations() {
+  const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
 
   const navigate = useNavigate();
 
@@ -35,7 +34,6 @@ export default function PatientArea() {
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1">
-            {/* Active Item - Dashboard */}
             <li>
               <a
                 href="#"
@@ -43,7 +41,7 @@ export default function PatientArea() {
                   e.preventDefault();
                   navigate("/patient-area");
                 }}
-                className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
+                className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <LayoutDashboard size={18} className="mr-3" />
                 <span className="text-sm font-medium">Dashboard</span>
@@ -77,6 +75,7 @@ export default function PatientArea() {
                 </span>
               </a>
             </li>
+            {/* Active Item - Minhas Consultas */}
             <li>
               <a
                 href="#"
@@ -84,7 +83,7 @@ export default function PatientArea() {
                   e.preventDefault();
                   navigate("/my-consultations");
                 }}
-                className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
+                className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
               >
                 <Stethoscope size={18} className="mr-3" />
                 <span className="text-sm font-medium">Minhas Consultas</span>
@@ -92,10 +91,7 @@ export default function PatientArea() {
             </li>
             <li>
               <a
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/my-documents");
-                }}
+                onClick={() => navigate("/my-documents")} // 3
                 href="#"
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
@@ -130,7 +126,7 @@ export default function PatientArea() {
               >
                 <HelpCircle size={16} className="mr-3" />
                 <span className="text-xs font-medium">
-                  Precisa de ajuda? Entre em...
+                  Precisa de ajuda? Entre em contato
                 </span>
               </a>
             </li>
@@ -161,60 +157,41 @@ export default function PatientArea() {
       {/* Main Content */}
       <main className="flex-1 p-8">
         <div className="max-w-5xl mx-auto space-y-6">
-          {/* Greeting Card */}
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              Olá, Alexandre de paula dias junior
-            </h1>
-            <p className="text-gray-500 text-sm">Seja bem vindo de volta.</p>
-          </div>
-
-          {/* Grid Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Receitas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Receitas
-                </h2>
-                <button
-                  onClick={() => navigate("/my-recipes")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
-                >
-                  Ver receitas
-                </button>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-medium">
-                  Nenhuma receita encontrada.
-                </p>
-              </div>
+          {/* Header Card */}
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                Minhas Consultas
+              </h1>
+              <p className="text-gray-500 text-sm">
+                Aqui você encontra suas consultas disponíveis.
+              </p>
             </div>
 
-            {/* Consultas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Consultas
-                </h2>
-                <button
-                  onClick={() => navigate("/my-consultations")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
-                >
-                  Ver todos
-                </button>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-medium">
-                  Nenhuma consulta encontrada.
-                </p>
-              </div>
+            {/* New Consultation Button */}
+            <button
+              onClick={() => navigate("/new-consult")}
+              className="flex items-center justify-center gap-2 bg-[#34C759] text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-[#2eaa4d] transition-colors shadow-sm"
+            >
+              <Plus size={18} />
+              Faça uma nova consulta
+            </button>
+          </div>
+
+          {/* Content Area */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 min-h-[450px] flex flex-col">
+            {/* Top Toolbar */}
+            <div className="p-6 border-b border-gray-50">
+              <h2 className="text-lg font-bold text-gray-800">
+                Minhas Consultas
+              </h2>
+            </div>
+
+            {/* Empty State Body */}
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <p className="text-gray-500 font-medium text-sm">
+                Nenhuma consulta encontrada.
+              </p>
             </div>
           </div>
         </div>
@@ -224,7 +201,7 @@ export default function PatientArea() {
         <ModalHelper setIsHelpModalOpen={setIsHelpModalOpen} />
       )}
 
-      {/* Floating Action Button (Chat) */}
+      {/* Floating Action Button */}
       <button className="fixed bottom-8 right-8 w-14 h-14 bg-[#34C759] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2eaa4d] transition-colors z-50">
         <MessageCircle size={24} />
       </button>

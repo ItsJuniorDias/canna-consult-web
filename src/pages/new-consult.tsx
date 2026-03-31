@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Leaf,
   LayoutDashboard,
   CalendarPlus,
   FileText,
@@ -7,19 +8,16 @@ import {
   Folder,
   Settings,
   HelpCircle,
-  LogOut,
-  Info,
   MessageCircle,
-  Leaf,
+  LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
-import { set } from "zod";
 
-export default function PatientArea() {
+export default function NewConsult() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // 2. Instancie o hook de navegação
 
   return (
     <div className="flex min-h-screen bg-[#f8f9f8] font-sans text-gray-800">
@@ -35,28 +33,22 @@ export default function PatientArea() {
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1">
-            {/* Active Item - Dashboard */}
             <li>
               <a
+                onClick={() => navigate("/patient-area")} // 3. Use o hook para navegar
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/patient-area");
-                }}
-                className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
+                className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <LayoutDashboard size={18} className="mr-3" />
                 <span className="text-sm font-medium">Dashboard</span>
               </a>
             </li>
+            {/* Active Item */}
             <li>
               <a
+                onClick={() => navigate("/new-consult")} // 3. Use o hook para navegar
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/new-consult");
-                }}
-                className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
+                className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
               >
                 <CalendarPlus size={18} className="mr-3" />
                 <span className="text-sm font-medium">Nova Consulta</span>
@@ -64,11 +56,8 @@ export default function PatientArea() {
             </li>
             <li>
               <a
+                onClick={() => navigate("/my-recipes")} // 3. Use o hook para navegar
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/my-recipes");
-                }}
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <FileText size={18} className="mr-3" />
@@ -79,11 +68,8 @@ export default function PatientArea() {
             </li>
             <li>
               <a
+                onClick={() => navigate("/my-consultations")} // 3. Use o hook para navegar
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/my-consultations");
-                }}
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <Stethoscope size={18} className="mr-3" />
@@ -92,10 +78,7 @@ export default function PatientArea() {
             </li>
             <li>
               <a
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/my-documents");
-                }}
+                onClick={() => navigate("/my-documents")} // 3
                 href="#"
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
@@ -130,7 +113,7 @@ export default function PatientArea() {
               >
                 <HelpCircle size={16} className="mr-3" />
                 <span className="text-xs font-medium">
-                  Precisa de ajuda? Entre em...
+                  Precisa de ajuda? Entre em contato
                 </span>
               </a>
             </li>
@@ -148,7 +131,7 @@ export default function PatientArea() {
             <li>
               <a
                 href="#"
-                className="flex items-center px-6 py-2 text-gray-500 hover:text-red-500 transition-colors mt-2"
+                className="flex items-center px-6 py-2 text-gray-500 hover:text-[#34C759] transition-colors mt-2"
               >
                 <LogOut size={16} className="mr-3" />
                 <span className="text-xs font-medium">Sair</span>
@@ -160,61 +143,82 @@ export default function PatientArea() {
 
       {/* Main Content */}
       <main className="flex-1 p-8">
-        <div className="max-w-5xl mx-auto space-y-6">
-          {/* Greeting Card */}
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Header Card */}
           <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              Olá, Alexandre de paula dias junior
+              Nova Consulta
             </h1>
-            <p className="text-gray-500 text-sm">Seja bem vindo de volta.</p>
+            <p className="text-gray-500 text-sm">
+              Escolha o melhor atendimento para você
+            </p>
           </div>
 
-          {/* Grid Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Receitas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Receitas
-                </h2>
-                <button
-                  onClick={() => navigate("/my-recipes")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
-                >
-                  Ver receitas
-                </button>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-medium">
-                  Nenhuma receita encontrada.
-                </p>
-              </div>
+          {/* Pricing Section */}
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[500px] flex flex-col items-center">
+            <div className="text-center mb-10">
+              <h2 className="text-xl font-bold text-gray-800 mb-2">
+                Escolha sua consulta
+              </h2>
+              <p className="text-gray-500 text-sm">
+                Selecione o plano ideal para suas necessidades
+              </p>
             </div>
 
-            {/* Consultas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Consultas
-                </h2>
-                <button
-                  onClick={() => navigate("/my-consultations")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
-                >
-                  Ver todos
-                </button>
+            {/* Pricing Card */}
+            <div className="relative w-full max-w-sm border border-gray-200 rounded-2xl p-8 pt-10 text-center shadow-sm hover:shadow-md transition-shadow bg-white">
+              {/* Badge */}
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#555555] text-white px-4 py-1 rounded-full text-xs font-semibold tracking-wide">
+                Ideal para começar
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-medium">
-                  Nenhuma consulta encontrada.
+
+              <h3 className="text-lg font-bold text-gray-800 mb-3">
+                Acesso Essencial
+              </h3>
+              <p className="text-xs text-gray-500 mb-6 px-4">
+                Ideal para começar sua jornada com cannabis medicinal de forma
+                segura e legal
+              </p>
+
+              <div className="mb-6">
+                <span className="block text-sm text-gray-400 line-through mb-1">
+                  R$ 249,90
+                </span>
+                <span className="block text-3xl font-extrabold text-[#34C759] mb-1">
+                  R$ 129,99
+                </span>
+                <span className="block text-xs font-bold text-[#34C759]">
+                  Economia de R$ 119,91
+                </span>
+              </div>
+
+              <div className="text-left mb-8">
+                <p className="text-sm font-semibold text-gray-700 mb-4 text-center">
+                  Inclui:
                 </p>
+                <ul className="space-y-3 text-xs text-gray-600">
+                  <li className="flex items-start">
+                    <span className="mr-2">-</span>
+                    <span>Consulta médica especializada em 24h</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">-</span>
+                    <span>Receita digital com validade legal</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">-</span>
+                    <span>Acesso a produtos certificados por parceiros</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">-</span>
+                    <span>Suporte prioritário via WhatsApp</span>
+                  </li>
+                </ul>
               </div>
+
+              <button className="w-full bg-[#34C759] text-white font-medium py-3 rounded-lg hover:bg-[#2eaa4d] transition-colors shadow-sm">
+                Iniciar Agora
+              </button>
             </div>
           </div>
         </div>
@@ -224,8 +228,8 @@ export default function PatientArea() {
         <ModalHelper setIsHelpModalOpen={setIsHelpModalOpen} />
       )}
 
-      {/* Floating Action Button (Chat) */}
-      <button className="fixed bottom-8 right-8 w-14 h-14 bg-[#34C759] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2eaa4d] transition-colors z-50">
+      {/* Floating Action Button (Optional, mimicking the bottom right icon) */}
+      <button className="fixed bottom-8 right-8 w-14 h-14 bg-[#34C759] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2eaa4d] transition-colors">
         <MessageCircle size={24} />
       </button>
     </div>
