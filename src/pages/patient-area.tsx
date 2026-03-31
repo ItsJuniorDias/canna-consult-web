@@ -11,14 +11,52 @@ import {
   Info,
   MessageCircle,
   Leaf,
+  Calendar,
+  Clock,
+  ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
-import { set } from "zod";
+
+// MOCKS DE DADOS
+const mockReceitas = [
+  {
+    id: 1,
+    title: "Óleo CBD 10% Full Spectrum",
+    doctor: "Dr. Carlos Eduardo",
+    date: "31/03/2026",
+    status: "Ativa",
+  },
+  {
+    id: 2,
+    title: "Gomas THC/CBD 1:1",
+    doctor: "Dra. Ana Flávia",
+    date: "15/02/2026",
+    status: "Vencida",
+  },
+];
+
+const mockConsultas = [
+  {
+    id: 1,
+    doctor: "Dra. Ana Flávia",
+    specialty: "Clínica Médica",
+    date: "10/04/2026",
+    time: "14:30",
+    status: "Agendada",
+  },
+  {
+    id: 2,
+    doctor: "Dr. Carlos Eduardo",
+    specialty: "Neurologia",
+    date: "25/03/2026",
+    time: "09:00",
+    status: "Realizada",
+  },
+];
 
 export default function PatientArea() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-
   const navigate = useNavigate();
 
   return (
@@ -169,11 +207,34 @@ export default function PatientArea() {
             <p className="text-gray-500 text-sm">Seja bem vindo de volta.</p>
           </div>
 
+          {/* Alert Banner - Adicionado com base no Print */}
+          <div className="bg-[#f9fbf8] border-l-4 border-[#34C759] border-y border-r border-y-[#eef3ea] border-r-[#eef3ea] rounded-xl p-6 shadow-sm flex items-start gap-4">
+            <div className="p-3 bg-[#e8efe3] rounded-full text-[#34C759] shrink-0">
+              <Folder size={24} />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-[#34C759] mb-1">
+                Estamos quase lá!
+              </h2>
+              <p className="text-sm text-gray-600 mb-3">
+                Para garantir a segurança do seu tratamento e agilizar a emissão
+                das suas receitas, precisamos do envio do seu documento de
+                identificação. É rápido e fácil!
+              </p>
+              <button
+                onClick={() => navigate("/my-documents")}
+                className="text-sm font-semibold text-[#34C759] hover:text-[#2eaa4d] flex items-center gap-1 transition-colors"
+              >
+                Enviar meus documentos agora <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+
           {/* Grid Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Receitas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
+              <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold text-gray-800">
                   Minhas Receitas
                 </h2>
@@ -181,22 +242,57 @@ export default function PatientArea() {
                   onClick={() => navigate("/my-recipes")}
                   className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
                 >
-                  Ver receitas
+                  Ver todas
                 </button>
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
+
+              {mockReceitas.length > 0 ? (
+                <div className="flex-1 flex flex-col gap-3">
+                  {mockReceitas.map((receita) => (
+                    <div
+                      key={receita.id}
+                      className="flex items-center justify-between p-4 rounded-lg border border-gray-100 hover:border-[#34C759] transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-[#f0fdf4] text-[#34C759] rounded-lg group-hover:bg-[#34C759] group-hover:text-white transition-colors">
+                          <FileText size={20} />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-gray-800">
+                            {receita.title}
+                          </h3>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {receita.doctor} • {receita.date}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                          receita.status === "Ativa"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {receita.status}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-sm font-medium">
-                  Nenhuma receita encontrada.
-                </p>
-              </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                  <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                    <Info size={28} className="text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium">
+                    Nenhuma receita encontrada.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Consultas Card */}
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-10">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
+              <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold text-gray-800">
                   Minhas Consultas
                 </h2>
@@ -204,17 +300,53 @@ export default function PatientArea() {
                   onClick={() => navigate("/my-consultations")}
                   className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
                 >
-                  Ver todos
+                  Ver todas
                 </button>
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Info size={28} className="text-gray-300" />
+
+              {mockConsultas.length > 0 ? (
+                <div className="flex-1 flex flex-col gap-3">
+                  {mockConsultas.map((consulta) => (
+                    <div
+                      key={consulta.id}
+                      className="flex items-center justify-between p-4 rounded-lg border border-gray-100 hover:border-[#34C759] transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-[#f0fdf4] text-[#34C759] rounded-lg group-hover:bg-[#34C759] group-hover:text-white transition-colors">
+                          <Stethoscope size={20} />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-gray-800">
+                            {consulta.doctor}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                            <Calendar size={12} /> {consulta.date}
+                            <Clock size={12} className="ml-1" /> {consulta.time}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                          consulta.status === "Agendada"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {consulta.status}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-sm font-medium">
-                  Nenhuma consulta encontrada.
-                </p>
-              </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                  <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                    <Info size={28} className="text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium">
+                    Nenhuma consulta encontrada.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

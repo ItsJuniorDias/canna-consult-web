@@ -1,4 +1,4 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import {
   Leaf,
   LayoutDashboard,
@@ -11,14 +11,62 @@ import {
   MessageCircle,
   LogOut,
   Search,
+  Download,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
 
+// MOCKS DE DADOS
+const mockReceitas = [
+  {
+    id: 1,
+    title: "Receita - Óleo CBD 10% Full Spectrum",
+    doctor: "Dr. Carlos Eduardo",
+    date: "31/03/2026",
+    status: "Válida",
+  },
+  {
+    id: 2,
+    title: "Receita - Gomas THC/CBD 1:1",
+    doctor: "Dra. Ana Flávia",
+    date: "15/02/2026",
+    status: "Expirada",
+  },
+];
+
+const mockLaudos = [
+  {
+    id: 1,
+    title: "Laudo Médico - Acompanhamento Trimestral",
+    doctor: "Dr. Carlos Eduardo",
+    date: "31/03/2026",
+    status: "Ativo",
+  },
+  {
+    id: 2,
+    title: "Laudo Médico Inicial",
+    doctor: "Dra. Ana Flávia",
+    date: "10/11/2025",
+    status: "Arquivado",
+  },
+];
+
 export default function MyRecipes() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("receitas"); // 'receitas' | 'laudos'
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const navigate = useNavigate(); // 2. Instancie o hook de navegação
+  const navigate = useNavigate();
+
+  // Define qual lista exibir com base na aba ativa
+  const currentData = activeTab === "receitas" ? mockReceitas : mockLaudos;
+
+  // Lógica de filtro para a barra de busca
+  const filteredData = currentData.filter(
+    (item) =>
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.doctor.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   return (
     <div className="flex min-h-screen bg-[#f8f9f8] font-sans text-gray-800">
@@ -36,7 +84,10 @@ export default function MyRecipes() {
           <ul className="space-y-1">
             <li>
               <a
-                onClick={() => navigate("/patient-area")} // 3. Use o hook para navegar
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/patient-area");
+                }}
                 href="#"
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
@@ -46,7 +97,10 @@ export default function MyRecipes() {
             </li>
             <li>
               <a
-                onClick={() => navigate("/new-consult")} // 3. Use o hook para navegar
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/new-consult");
+                }}
                 href="#"
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
@@ -57,7 +111,10 @@ export default function MyRecipes() {
             {/* Active Item */}
             <li>
               <a
-                onClick={() => navigate("/my-recipes")} // 3. Use o hook para navegar
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/my-recipes");
+                }}
                 href="#"
                 className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
               >
@@ -69,7 +126,10 @@ export default function MyRecipes() {
             </li>
             <li>
               <a
-                onClick={() => navigate("/my-consultations")} // 3. Use o hook para navegar
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/my-consultations");
+                }}
                 href="#"
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
@@ -79,7 +139,10 @@ export default function MyRecipes() {
             </li>
             <li>
               <a
-                onClick={() => navigate("/my-documents")} // 3
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/my-documents");
+                }}
                 href="#"
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
@@ -151,17 +214,37 @@ export default function MyRecipes() {
               Minhas Receitas/Laudos
             </h1>
             <p className="text-gray-500 text-sm">
-              Aqui você encontra suas receitas disponíveis.
+              Aqui você encontra suas receitas e laudos médicos disponíveis.
             </p>
           </div>
 
           {/* Tabs */}
           <div className="bg-gray-100/70 p-1.5 rounded-lg flex items-center">
-            <button className="flex-1 bg-white py-2.5 rounded-md shadow-sm text-sm font-semibold text-gray-800 transition-all">
-              Minhas Receitas (0)
+            <button
+              onClick={() => {
+                setActiveTab("receitas");
+                setSearchTerm("");
+              }}
+              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all ${
+                activeTab === "receitas"
+                  ? "bg-white shadow-sm text-gray-800"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Minhas Receitas ({mockReceitas.length})
             </button>
-            <button className="flex-1 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-all">
-              Meus Laudos (0)
+            <button
+              onClick={() => {
+                setActiveTab("laudos");
+                setSearchTerm("");
+              }}
+              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all ${
+                activeTab === "laudos"
+                  ? "bg-white shadow-sm text-gray-800"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Meus Laudos ({mockLaudos.length})
             </button>
           </div>
 
@@ -170,7 +253,7 @@ export default function MyRecipes() {
             {/* Top Toolbar */}
             <div className="p-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-bold text-gray-800">
-                Minhas Receitas
+                {activeTab === "receitas" ? "Minhas Receitas" : "Meus Laudos"}
               </h2>
 
               {/* Search Input */}
@@ -181,21 +264,89 @@ export default function MyRecipes() {
                 />
                 <input
                   type="text"
-                  placeholder="Buscar por receita"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={`Buscar por ${
+                    activeTab === "receitas" ? "receita" : "laudo"
+                  }`}
                   className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#34C759] focus:ring-1 focus:ring-[#34C759] transition-all"
                 />
               </div>
             </div>
 
-            {/* Empty State Body */}
-            <div className="flex-1 flex flex-col items-center justify-center p-8">
-              <div className="w-20 h-20 bg-[#9fb99e] rounded-2xl flex items-center justify-center mb-5 opacity-90">
-                <FileText size={40} className="text-white" strokeWidth={1.5} />
+            {/* List Body or Empty State */}
+            {filteredData.length > 0 ? (
+              <div className="p-6 grid grid-cols-1 gap-4">
+                {filteredData.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-[#34C759] transition-colors group bg-white shadow-sm hover:shadow-md"
+                  >
+                    <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                      <div className="w-12 h-12 bg-[#f0fdf4] text-[#34C759] rounded-xl flex items-center justify-center group-hover:bg-[#34C759] group-hover:text-white transition-colors shrink-0">
+                        {activeTab === "receitas" ? (
+                          <FileText size={24} />
+                        ) : (
+                          <Folder size={24} />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-gray-800">
+                          {item.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-0.5">
+                          {item.doctor} • Emitido em {item.date}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                      <span
+                        className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                          item.status === "Válida" || item.status === "Ativo"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                      <button className="flex items-center justify-center p-2 text-gray-400 hover:text-[#34C759] hover:bg-green-50 rounded-lg transition-colors">
+                        <Download size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p className="text-gray-500 font-medium text-sm">
-                Nenhuma receita cadastrada
-              </p>
-            </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-8">
+                <div className="w-20 h-20 bg-[#34C759] rounded-2xl flex items-center justify-center mb-5 opacity-90 shadow-sm">
+                  {activeTab === "receitas" ? (
+                    <FileText
+                      size={40}
+                      className="text-white"
+                      strokeWidth={1.5}
+                    />
+                  ) : (
+                    <Folder
+                      size={40}
+                      className="text-white"
+                      strokeWidth={1.5}
+                    />
+                  )}
+                </div>
+                <p className="text-gray-500 font-medium text-sm">
+                  {searchTerm !== ""
+                    ? `Nenhum(a) ${
+                        activeTab === "receitas" ? "receita" : "laudo"
+                      } encontrado(a) para "${searchTerm}".`
+                    : `Nenhum(a) ${
+                        activeTab === "receitas"
+                          ? "receita cadastrada"
+                          : "laudo cadastrado"
+                      }.`}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </main>
