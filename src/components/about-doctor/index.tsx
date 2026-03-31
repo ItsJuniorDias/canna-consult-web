@@ -39,20 +39,22 @@ const AboutDoctor = () => {
               transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
               viewport={{ once: true }}
             >
-              Murilo Alves Navarro é médico, com quase 10 anos de formação e
-              ampla experiência em gestão hospitalar, telemedicina e atendimento
-              em larga escala. Ao longo da carreira, atuou na coordenação de
-              hospitais, desenvolveu projetos em saúde digital e sempre manteve
-              o foco em ampliar o acesso à saúde de forma prática e humana.
+              João Marcos Santos da Silva é médico, com quase 3 anos de formação
+              e ampla experiência em gestão hospitalar, telemedicina e
+              atendimento em larga escala. Ao longo da carreira, atuou na
+              coordenação de hospitais, desenvolveu projetos em saúde digital e
+              sempre manteve o foco em ampliar o acesso à saúde de forma prática
+              e humana.
             </motion.p>
+
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5, ease: "easeOut" }}
               viewport={{ once: true }}
             >
-              Desde junho de 2021, prescreve cannabis medicinal de forma
-              contínua, acompanhando mais de 3.000 pacientes ativos, o que lhe
+              Desde junho de 2023, prescreve cannabis medicinal de forma
+              contínua, acompanhando mais de 1.000 pacientes, o que lhe
               proporcionou um entendimento profundo das reais necessidades de
               quem busca esse tipo de tratamento.
             </motion.p>
@@ -62,7 +64,7 @@ const AboutDoctor = () => {
               transition={{ duration: 0.5, delay: 0.6, ease: "easeOut" }}
               viewport={{ once: true }}
             >
-              É fundador da Canna Consult e da Doctor192, empresas criadas para
+              É fundador junto com sócios da Canna Consult, empresa criada para
               unir medicina, tecnologia e experiência clínica real. Seu trabalho
               é pautado em ética, legalidade, acompanhamento próximo e
               construção de soluções que realmente funcionam na prática.
@@ -79,7 +81,7 @@ const AboutDoctor = () => {
           >
             <div className="w-2 h-2 rounded-full bg-[#34C759]"></div>
             <span className="text-sm font-semibold text-gray-700 tracking-wide">
-              CRM/SP 123456
+              CRM-MT 14316
             </span>
           </motion.div>
         </motion.div>
@@ -96,7 +98,7 @@ const AboutDoctor = () => {
           <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-gray-200/50 aspect-[4/5] md:aspect-square lg:aspect-[4/5] max-w-md mx-auto lg:max-w-none">
             {/* Imagem do Médico */}
             <img
-              src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=1000&auto=format&fit=crop"
+              src="https://res.cloudinary.com/dqvujibkn/image/upload/v1774995510/220930_Med19Ufac_Studio_7507.jpg_rylikg.jpg"
               alt="Retrato do Dr. Murilo Alves Navarro"
               className="w-full h-full object-cover object-center"
             />

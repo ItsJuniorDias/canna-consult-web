@@ -153,11 +153,9 @@ export default function PDFDownload() {
 
           <div className="mt-16 pt-6 border-t border-gray-800 flex flex-col items-center justify-center text-center print:break-inside-avoid">
             <div className="w-64 border-b-2 border-gray-800 mb-2"></div>
-            <p className="font-bold text-[15px]">
-              Murilo Alves Navarro (Exemplo)
-            </p>
+            <p className="font-bold text-[15px]">João Marcos Santos da Silva</p>
             <p className="text-[13px] text-gray-600 print:text-gray-800">
-              CRM/SP 177992 - Especialidade: Cannabis Medicinal
+              CRM-MT 14316 - Especialidade Psiquiatria
             </p>
             <p className="text-[13px] text-gray-600 print:text-gray-800 mt-2">
               Data de Emissão: {dataHoje}

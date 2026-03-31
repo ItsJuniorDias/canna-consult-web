@@ -52,17 +52,17 @@ export default function ConsultaCheckout() {
             <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 border-2 border-[#FDF9F3]">
               {/* Substitua o src pela foto real do médico */}
               <img
-                src="https://ui-avatars.com/api/?name=Dr+Silva&background=34C759&color=fff&size=128"
+                src="https://res.cloudinary.com/dqvujibkn/image/upload/v1774995510/220930_Med19Ufac_Studio_7507.jpg_rylikg.jpg"
                 alt="Foto do Médico"
                 className="w-full h-full object-cover"
               />
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-800">
-                Dr. Nome do Médico
+                Dr. João Marcos Santos da Silva
               </h2>
               <p className="text-sm text-gray-500">
-                Psiquiatria • CRM 12345/SP
+                Psiquiatria • CRM-MT 14316
               </p>
             </div>
           </div>

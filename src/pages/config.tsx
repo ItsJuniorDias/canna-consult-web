@@ -216,7 +216,9 @@ export default function Config() {
             </li>
             <li>
               <a
-                href="#"
+                href="https://chat.whatsapp.com/EcVWTOXS4yE8EwWPqqCprY?mode=gi_t"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center px-6 py-2 text-gray-500 hover:text-[#34C759] transition-colors"
               >
                 <MessageCircle size={16} className="mr-3" />

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
+import { auth } from "../../firebaseConfig";
 
 // MOCKS DE DADOS
 const mockReceitas = [
@@ -183,7 +184,9 @@ export default function MyRecipes() {
             </li>
             <li>
               <a
-                href="#"
+                href="https://chat.whatsapp.com/EcVWTOXS4yE8EwWPqqCprY?mode=gi_t"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center px-6 py-2 text-gray-500 hover:text-[#34C759] transition-colors"
               >
                 <MessageCircle size={16} className="mr-3" />
@@ -194,6 +197,10 @@ export default function MyRecipes() {
             </li>
             <li>
               <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  auth.signOut();
+                }}
                 href="#"
                 className="flex items-center px-6 py-2 text-gray-500 hover:text-[#34C759] transition-colors mt-2"
               >

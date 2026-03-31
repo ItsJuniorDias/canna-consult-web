@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 const reasons = [
   "Uma das plataformas mais seguras do país",
-  "Mais de 3.000 pacientes acompanhados",
+  "Mais de 1.000 pacientes acompanhados",
   "Médicos experientes em cannabis medicinal",
   "Tecnologia própria com IA treinada em casos reais",
   "Atendimento rápido, humano e sem burocracia",

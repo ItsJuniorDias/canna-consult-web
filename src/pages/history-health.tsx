@@ -7,7 +7,9 @@ import { auth, db } from "../../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 
 const questions = [
+  { id: "idade", label: "Você tem mais de 25 anos?" },
   { id: "tratamento", label: "Atualmente faz algum tratamento?" },
+  { id: "alergia", label: "Tem alguma alergia conhecida?" },
   { id: "cronica", label: "Possui alguma doença crônica?" },
   { id: "psiquiatrico", label: "Faz uso de remédios psiquiátricos?" },
   { id: "arritmia", label: "Possui arritmia cardíaca?" },

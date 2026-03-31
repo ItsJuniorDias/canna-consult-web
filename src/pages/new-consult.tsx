@@ -13,11 +13,38 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
+import { auth } from "../../firebaseConfig";
+import api from "../../service/axios";
 
 export default function NewConsult() {
+  const [isLoading, setIsLoading] = useState(false);
+
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   const navigate = useNavigate(); // 2. Instancie o hook de navegação
+
+  const handleCheckout = async () => {
+    setIsLoading(true);
+    try {
+      // Endpoint da sua API que cria a sessão do Stripe Checkout
+      const response = await api.post("/api/checkout_sessions", {
+        priceId: "price_1TFYHERB4hnPW0iSEfHXhuni", // Substitua pelo seu Price ID
+      });
+
+      const data = response.data;
+
+      console.log("Resposta do backend:", data);
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Erro ao processar pagamento:", error);
+      alert("Não foi possível iniciar o pagamento. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-[#f8f9f8] font-sans text-gray-800">
@@ -119,7 +146,9 @@ export default function NewConsult() {
             </li>
             <li>
               <a
-                href="#"
+                href="https://chat.whatsapp.com/EcVWTOXS4yE8EwWPqqCprY?mode=gi_t"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center px-6 py-2 text-gray-500 hover:text-[#34C759] transition-colors"
               >
                 <MessageCircle size={16} className="mr-3" />
@@ -130,6 +159,10 @@ export default function NewConsult() {
             </li>
             <li>
               <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  auth.signOut();
+                }}
                 href="#"
                 className="flex items-center px-6 py-2 text-gray-500 hover:text-[#34C759] transition-colors mt-2"
               >
@@ -216,8 +249,43 @@ export default function NewConsult() {
                 </ul>
               </div>
 
-              <button className="w-full bg-[#34C759] text-white font-medium py-3 rounded-lg hover:bg-[#2eaa4d] transition-colors shadow-sm">
-                Iniciar Agora
+              <button
+                onClick={handleCheckout}
+                disabled={isLoading}
+                className={`w-full font-medium py-3 rounded-lg transition-colors shadow-sm flex justify-center items-center ${
+                  isLoading
+                    ? "bg-[#80e59a] cursor-not-allowed text-white"
+                    : "bg-[#34C759] text-white hover:bg-[#2eaa4d]"
+                }`}
+              >
+                {isLoading ? (
+                  <>
+                    {/* Ícone de Loading SVG (opcional, mas recomendado) */}
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Gerando pagamento...
+                  </>
+                ) : (
+                  "Iniciar Agora"
+                )}
               </button>
             </div>
           </div>
