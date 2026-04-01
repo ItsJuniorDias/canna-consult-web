@@ -1,24 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { db, auth } from "../../firebaseConfig"; // Ajuste o caminho
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, auth, storage } from "../../firebaseConfig";
 import { signOut } from "firebase/auth";
-import html2pdf from "html2pdf.js"; // Importando a biblioteca de PDF
-import { marked } from "marked"; // Para converter markdown em HTML limpo. npm install marked
+import html2pdf from "html2pdf.js";
+import { marked } from "marked";
 
 export default function MedicalArea() {
   const navigate = useNavigate();
   const [laudos, setLaudos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // NOVO ESTADO: Controla qual laudo já teve o upload concluído e está pronto para abrir o WhatsApp
+  const [laudoProntoParaWhats, setLaudoProntoParaWhats] = useState({
+    id: null,
+    url: "",
+  });
 
   // ==========================================
-  // BUSCA DE DADOS (FIREBASE REAL)
+  // BUSCA DE DADOS
   // ==========================================
   useEffect(() => {
     const fetchLaudos = async () => {
       try {
         const laudosRef = collection(db, "laudos");
-        // Buscando os laudos ordenados do mais recente para o mais antigo
         const q = query(laudosRef, orderBy("timestamp", "desc"));
         const querySnapshot = await getDocs(q);
 
@@ -39,10 +53,8 @@ export default function MedicalArea() {
   }, []);
 
   // ==========================================
-  // HANDLERS E GERAÇÃO DE PDF
+  // HANDLERS (PDF E WHATSAPP)
   // ==========================================
-
-  // Função para decodificar Base64 de volta para String UTF-8 (mantendo acentos)
   const decodeBase64 = (base64) => {
     try {
       const binString = atob(base64);
@@ -64,13 +76,9 @@ export default function MedicalArea() {
     }
 
     try {
-      // 1. Decodifica o Base64 para a string Markdown original
       const markdownString = decodeBase64(laudo.conteudoLaudo);
-
-      // 2. Converte o Markdown para HTML usando a biblioteca 'marked'
       const htmlContent = marked.parse(markdownString);
 
-      // 3. Monta o HTML completo que vai para o PDF (adicionando cabeçalho e estilização básica)
       const element = document.createElement("div");
       element.innerHTML = `
         <div style="padding: 40px; font-family: sans-serif; color: #333; line-height: 1.6;">
@@ -98,7 +106,6 @@ export default function MedicalArea() {
         </div>
       `;
 
-      // 4. Configurações do html2pdf
       const opt = {
         margin: 0,
         filename: `Laudo_${laudo.paciente.replace(/\s+/g, "_")}_${laudo.dataCriacao}.pdf`,
@@ -107,7 +114,6 @@ export default function MedicalArea() {
         jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
       };
 
-      // 5. Gera e faz o download do PDF
       html2pdf().from(element).set(opt).save();
     } catch (error) {
       console.error("Erro ao gerar o PDF:", error);
@@ -115,10 +121,69 @@ export default function MedicalArea() {
     }
   };
 
+  const handleUploadAndSendToWhatsApp = async (event, laudo) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!laudo.telefone) {
+      alert("Número de telefone do paciente não encontrado no banco de dados.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // 1. Cria a referência no Firebase Storage
+      const fileName = `laudos_assinados/${laudo.id}_${Date.now()}_${file.name}`;
+      const storageReference = ref(storage, fileName);
+
+      // 2. Faz o upload do arquivo
+      await uploadBytes(storageReference, file);
+
+      // 3. Pega a URL pública
+      const downloadURL = await getDownloadURL(storageReference);
+
+      // --- NOVO: ATUALIZAÇÃO NO FIRESTORE ---
+      const laudoRef = doc(db, "laudos", laudo.id);
+      await updateDoc(laudoRef, {
+        status: "Finalizado",
+        urlAssinado: downloadURL, // Opcional: salva o link do assinado no banco
+        dataAssinatura: new Date().toISOString(),
+      });
+
+      // Atualiza o estado local para refletir a mudança na tabela sem precisar dar F5
+      setLaudos((prevLaudos) =>
+        prevLaudos.map((item) =>
+          item.id === laudo.id ? { ...item, status: "Finalizado" } : item,
+        ),
+      );
+      // ---------------------------------------
+
+      // 4. Formata o telefone
+      let telefoneFormatado = laudo.telefone.replace(/\D/g, "");
+      if (!telefoneFormatado.startsWith("55")) {
+        telefoneFormatado = "55" + telefoneFormatado;
+      }
+
+      // 5. Monta a mensagem e o link do WhatsApp
+      const mensagem = `Olá, ${laudo.paciente}! Aqui está o seu Laudo Médico assinado. Você pode acessá-lo através deste link: ${downloadURL}`;
+      const whatsappUrl = `https://wa.me/${telefoneFormatado}?text=${encodeURIComponent(mensagem)}`;
+
+      // 6. Atualiza o estado para liberar o botão
+      setLaudoProntoParaWhats({ id: laudo.id, url: whatsappUrl });
+    } catch (error) {
+      console.error("Erro ao processar o arquivo:", error);
+      alert("Ocorreu um erro ao atualizar o status ou enviar o arquivo.");
+    } finally {
+      setIsUploading(false);
+      event.target.value = null;
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate("/"); // Redireciona para o login
+      navigate("/");
     } catch (error) {
       console.error("Erro ao sair:", error);
     }
@@ -129,7 +194,6 @@ export default function MedicalArea() {
   // ==========================================
   return (
     <div className="min-h-screen bg-[#FDF9F3] font-sans">
-      {/* HEADER */}
       <header className="bg-white shadow-sm border-b border-gray-100 px-6 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <h1 className="text-xl font-bold text-gray-800 uppercase tracking-wide">
@@ -168,17 +232,15 @@ export default function MedicalArea() {
               Gerencie e baixe os laudos das avaliações dos pacientes.
             </p>
           </div>
-
-          <div className="mt-4 md:mt-0">
-            <input
-              type="text"
-              placeholder="Buscar paciente ou CPF..."
-              className="px-4 py-2 w-full md:w-72 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#34C759] focus:border-transparent text-sm bg-white"
-            />
-          </div>
         </div>
 
-        {/* CARD DA TABELA */}
+        {isUploading && (
+          <div className="mb-4 p-4 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg flex items-center">
+            <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-700 rounded-full animate-spin mr-3"></div>
+            Fazendo upload do arquivo e preparando o link do WhatsApp...
+          </div>
+        )}
+
         <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
@@ -194,7 +256,7 @@ export default function MedicalArea() {
                     <th className="px-6 py-4 font-medium">CPF</th>
                     <th className="px-6 py-4 font-medium">Data</th>
                     <th className="px-6 py-4 font-medium">Status</th>
-                    <th className="px-6 py-4 font-medium text-center">Ação</th>
+                    <th className="px-6 py-4 font-medium text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm text-gray-700 divide-y divide-gray-100">
@@ -225,40 +287,89 @@ export default function MedicalArea() {
                         <td className="px-6 py-4">
                           <span
                             className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                              laudo.status === "Finalizado"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-yellow-100 text-yellow-700"
+                              laudo.status === "Aprovado"
+                                ? "bg-blue-100 text-blue-700"
+                                : laudo.status === "Finalizado"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-yellow-100 text-yellow-700"
                             }`}
                           >
-                            {laudo.status || "Finalizado"}
+                            {laudo.status || "Pendente"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() => handleDownloadPDF(laudo)}
-                            disabled={!laudo.conteudoLaudo} // Desabilita se não tiver o laudo no banco
-                            className={`inline-flex items-center justify-center space-x-1 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                              laudo.conteudoLaudo
-                                ? "bg-[#34C759] hover:bg-[#28A745] text-white shadow-sm"
-                                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            }`}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={2.5}
-                              stroke="currentColor"
-                              className="w-4 h-4"
+                          <div className="flex items-center justify-center space-x-2">
+                            {/* BOTÃO GERAR PDF ORIGINAL */}
+                            <button
+                              onClick={() => handleDownloadPDF(laudo)}
+                              disabled={!laudo.conteudoLaudo || isUploading}
+                              className={`inline-flex items-center justify-center p-2 rounded-lg text-sm font-bold transition-all ${laudo.conteudoLaudo && !isUploading ? "bg-gray-100 hover:bg-gray-200 text-gray-700" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
+                              title="Baixar PDF Original"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
-                              />
-                            </svg>
-                            <span>Gerar e Baixar PDF</span>
-                          </button>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                                className="w-5 h-5"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+                                />
+                              </svg>
+                            </button>
+
+                            {/* CONDICIONAL: BOTÃO DE UPLOAD OU BOTÃO DE ABRIR WHATSAPP */}
+                            {laudoProntoParaWhats.id === laudo.id ? (
+                              <a
+                                href={laudoProntoParaWhats.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() =>
+                                  setLaudoProntoParaWhats({ id: null, url: "" })
+                                } // Limpa o estado após clicar
+                                className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-bold transition-all bg-[#25D366] hover:bg-[#1DA851] text-white shadow-sm animate-pulse"
+                                title="Clique para abrir o WhatsApp com o link do laudo"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  className="w-4 h-4 mr-2"
+                                >
+                                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+                                </svg>
+                                <span>Abrir WhatsApp</span>
+                              </a>
+                            ) : (
+                              <label
+                                className={`cursor-pointer inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-bold transition-all ${isUploading ? "bg-gray-400 cursor-not-allowed" : "bg-[#25D366] hover:bg-[#1DA851]"} text-white shadow-sm`}
+                                title="Fazer upload do PDF assinado e preparar envio"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                  className="w-4 h-4 mr-2"
+                                >
+                                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+                                </svg>
+                                <span>Enviar Assinado</span>
+                                <input
+                                  type="file"
+                                  accept="application/pdf"
+                                  className="hidden"
+                                  disabled={isUploading}
+                                  onChange={(e) =>
+                                    handleUploadAndSendToWhatsApp(e, laudo)
+                                  }
+                                />
+                              </label>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
