@@ -93,7 +93,7 @@ const Footer = () => {
         {/* Informações da Empresa (Cores ajustadas para fundo escuro) */}
         <motion.div variants={itemVariants} className="space-y-3 mb-8">
           <p className="text-sm text-gray-400 font-medium tracking-tight">
-            CANNA CONSULT LTDA — CNPJ: 00.000.000/0001-00
+            CANNA CONSULT LTDA — CNPJ: 46.024.658/0001-34
           </p>
           <p className="text-sm text-gray-400 font-medium tracking-tight">
             © 2026 Canna Consult. Todos os direitos reservados.

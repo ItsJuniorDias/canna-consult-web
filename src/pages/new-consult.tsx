@@ -26,18 +26,7 @@ export default function NewConsult() {
   const handleCheckout = async () => {
     setIsLoading(true);
     try {
-      // Endpoint da sua API que cria a sessão do Stripe Checkout
-      const response = await api.post("/api/checkout_sessions", {
-        priceId: "price_1TFYHERB4hnPW0iSEfHXhuni", // Substitua pelo seu Price ID
-      });
-
-      const data = response.data;
-
-      console.log("Resposta do backend:", data);
-
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      navigate("/checkout"); // Redireciona para a página de checkout
     } catch (error) {
       console.error("Erro ao processar pagamento:", error);
       alert("Não foi possível iniciar o pagamento. Tente novamente.");

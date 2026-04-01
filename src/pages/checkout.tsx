@@ -64,26 +64,23 @@ export default function Checkout() {
     return () => unsubscribe();
   }, []);
 
-  // --- NOVO: Efeito para checar o status do PIX a cada 5 segundos ---
+  // --- Efeito para checar o status do PIX a cada 5 segundos ---
   useEffect(() => {
     let intervalId;
 
     const checkPaymentStatus = async () => {
       try {
-        // AJUSTE AQUI: Use a rota correta do seu backend para checar o status da transação
         const response = await api.get(
           `/api/checkout/status/${pixData.orderId}`,
         );
 
-        // AJUSTE AQUI: Verifique qual é a string exata que seu backend/Pagar.me retorna para aprovado (ex: "paid", "approved", "aprovado")
         if (response.data && response.data.status === "paid") {
           setMessage({
             text: "✅ PIX confirmado! Redirecionando para a consulta...",
             type: "success",
           });
-          clearInterval(intervalId); // Para de checar
+          clearInterval(intervalId);
 
-          // Aguarda 1.5 segundos para o usuário ler a mensagem e redireciona
           setTimeout(() => {
             navigate("/chat");
           }, 1500);
@@ -93,12 +90,10 @@ export default function Checkout() {
       }
     };
 
-    // Só inicia o polling se tiver dados do PIX e um orderId válido
     if (pixData && pixData.orderId) {
-      intervalId = setInterval(checkPaymentStatus, 5000); // Checa a cada 5 segundos
+      intervalId = setInterval(checkPaymentStatus, 5000);
     }
 
-    // Limpa o intervalo se o componente for desmontado ou se o pixData mudar
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
@@ -148,7 +143,6 @@ export default function Checkout() {
       ];
 
       if (paymentMethod === "credit_card") {
-        // --- LÓGICA CARTÃO DE CRÉDITO ---
         const tokenResponse = await axios.post(
           `https://api.pagar.me/core/v5/tokens?appId=${PAGARME_PUBLIC_KEY}`,
           {
@@ -184,7 +178,6 @@ export default function Checkout() {
           navigate("/chat");
         }
       } else {
-        // --- LÓGICA PIX ---
         const response = await api.post("/api/checkout/pix", {
           customer: customerData,
           items: itemsData,
@@ -198,7 +191,6 @@ export default function Checkout() {
             text: "PIX gerado com sucesso! Aguardando pagamento...",
             type: "info",
           });
-          // O useEffect de checagem começará a atuar a partir daqui
         }
       }
     } catch (error) {
@@ -220,7 +212,6 @@ export default function Checkout() {
     });
   };
 
-  // --- Tela de Loading Inicial ---
   if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -231,19 +222,22 @@ export default function Checkout() {
     );
   }
 
-  // --- Interface do Checkout ---
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-8 font-sans">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl flex flex-col md:flex-row overflow-hidden transition-all">
+      {/* 1. ADICIONADO min-h-[600px] NO CONTAINER PRINCIPAL */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl flex flex-col md:flex-row overflow-hidden transition-all min-h-[600px]">
         {/* Lado Esquerdo - Imagem e Descrição do Produto */}
-        <div className="hidden md:block md:w-1/2 relative bg-gray-900">
+        {/* 2. MUDADO PARA flex flex-col PARA ALINHAR O CONTEÚDO CORRETAMENTE */}
+        <div className="hidden md:flex flex-col md:w-1/2 relative bg-gray-900">
           <img
             src="https://images.unsplash.com/photo-1637091998767-e6a9d5e80271?q=80&w=1548&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
             alt="Ilustração de Checkout"
-            className="absolute inset-0 w-full h-full object-cover opacity-60"
+            className="absolute inset-0 w-full h-full object-cover opacity-60 z-0"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-          <div className="absolute inset-0 p-10 flex flex-col justify-end text-white">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-0"></div>
+
+          {/* 3. MUDADO DE absolute inset-0 PARA relative z-10 h-full */}
+          <div className="relative z-10 p-10 flex flex-col justify-end h-full text-white">
             <span className="bg-[#34C759] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider w-max mb-4">
               Agendamento
             </span>
@@ -252,7 +246,7 @@ export default function Checkout() {
               <img
                 src="https://res.cloudinary.com/dqvujibkn/image/upload/v1774995510/220930_Med19Ufac_Studio_7507.jpg_rylikg.jpg"
                 alt="Dr. João Marcos Santos da Silva"
-                className="w-16 h-16 rounded-full object-cover border-2 border-[#34C759] shadow-lg"
+                className="w-16 h-16 rounded-full object-cover border-2 border-[#34C759] shadow-lg shrink-0"
               />
               <div>
                 <h3 className="font-bold text-lg leading-tight text-white">
@@ -282,7 +276,7 @@ export default function Checkout() {
                 presencial ou online
               </li>
             </ul>
-            <div className="pt-6 border-t border-white/20 flex justify-between items-center">
+            <div className="pt-6 border-t border-white/20 flex justify-between items-center mt-auto">
               <span className="text-lg text-gray-300">Total a pagar</span>
               <span className="text-3xl font-bold">R$ 129,90</span>
             </div>
@@ -395,7 +389,7 @@ export default function Checkout() {
                   </div>
                 </>
               ) : (
-                <div className="py-6 text-center bg-gray-50 rounded-xl border border-gray-100">
+                <div className="py-6 text-center bg-gray-50 rounded-xl border border-gray-100 flex-1 flex flex-col justify-center">
                   <p className="text-gray-600 text-sm px-4">
                     O código PIX tem validade de{" "}
                     <span className="font-bold">1 hora</span>. O pagamento é
@@ -420,7 +414,6 @@ export default function Checkout() {
                 Pedido: <span className="text-gray-600">{pixData.orderId}</span>
               </p>
 
-              {/* Status de carregamento para indicar que está aguardando o pagamento */}
               <div className="mb-4 text-sm font-semibold text-[#34C759] animate-pulse flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#34C759]"></span>
                 Aguardando pagamento...

@@ -9,7 +9,7 @@ import {
   Heart,
   Minus,
   Plus,
-  Loader2, // Importando o ícone de loading
+  Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -32,7 +32,7 @@ export default function Preference() {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [duration, setDuration] = useState(3);
   const [investment, setInvestment] = useState(1000);
-  const [isLoading, setIsLoading] = useState(false); // Estado de loading
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handlers
   const toggleProduct = (id) => {
@@ -60,24 +60,42 @@ export default function Preference() {
     setIsLoading(true);
 
     try {
+      // Referências para os dois documentos (coleção 'patients' e 'preferences')
       const patientRef = doc(db, "patients", user.uid);
+      const preferenceRef = doc(db, "preferences", user.uid);
 
-      // Salvamos as preferências e adicionamos uma flag de onboarding concluído
-      await setDoc(
-        patientRef,
-        {
-          preferences: {
+      // Executa ambas as operações de salvamento simultaneamente
+      await Promise.all([
+        // 1. LÓGICA ORIGINAL: Salva no documento do paciente
+        setDoc(
+          patientRef,
+          {
+            preferences: {
+              products: selectedProducts,
+              durationInMonths: duration,
+              monthlyInvestment: investment,
+            },
+            onboardingCompleted: true,
+            updatedAt: new Date(),
+          },
+          { merge: true },
+        ),
+
+        // 2. NOVA LÓGICA: Salva na coleção isolada de preferências
+        setDoc(
+          preferenceRef,
+          {
+            userId: user.uid,
             products: selectedProducts,
             durationInMonths: duration,
             monthlyInvestment: investment,
+            updatedAt: new Date(),
           },
-          onboardingCompleted: true, // Flag útil para saber que o usuário terminou o fluxo
-          updatedAt: new Date(),
-        },
-        { merge: true },
-      );
+          { merge: true },
+        ),
+      ]);
 
-      // Redireciona para a tela inicial do paciente (Ajuste a rota conforme necessário)
+      // Redireciona para a tela de checkout (Ajuste a rota conforme necessário)
       navigate("/checkout");
     } catch (error) {
       console.error("Erro ao salvar preferências:", error);
