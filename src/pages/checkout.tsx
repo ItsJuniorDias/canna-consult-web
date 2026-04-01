@@ -39,7 +39,6 @@ export default function Checkout() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         try {
-          // Busca o documento na coleção "users" (Ajuste o nome se for "clientes", "usuarios", etc)
           const docRef = doc(db, "users", currentUser.uid);
           const docSnap = await getDoc(docRef);
 
@@ -57,7 +56,6 @@ export default function Checkout() {
           setMessage({ text: "Erro ao carregar seus dados.", type: "error" });
         }
       } else {
-        // Se não tiver usuário, limpa o estado (você pode redirecionar para o login aqui se quiser)
         setUserData(null);
       }
       setIsLoadingUser(false);
@@ -65,6 +63,46 @@ export default function Checkout() {
 
     return () => unsubscribe();
   }, []);
+
+  // --- NOVO: Efeito para checar o status do PIX a cada 5 segundos ---
+  useEffect(() => {
+    let intervalId;
+
+    const checkPaymentStatus = async () => {
+      try {
+        // AJUSTE AQUI: Use a rota correta do seu backend para checar o status da transação
+        const response = await api.get(
+          `/api/checkout/status/${pixData.orderId}`,
+        );
+
+        // AJUSTE AQUI: Verifique qual é a string exata que seu backend/Pagar.me retorna para aprovado (ex: "paid", "approved", "aprovado")
+        if (response.data && response.data.status === "paid") {
+          setMessage({
+            text: "✅ PIX confirmado! Redirecionando para a consulta...",
+            type: "success",
+          });
+          clearInterval(intervalId); // Para de checar
+
+          // Aguarda 1.5 segundos para o usuário ler a mensagem e redireciona
+          setTimeout(() => {
+            navigate("/chat");
+          }, 1500);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar status do PIX:", error);
+      }
+    };
+
+    // Só inicia o polling se tiver dados do PIX e um orderId válido
+    if (pixData && pixData.orderId) {
+      intervalId = setInterval(checkPaymentStatus, 5000); // Checa a cada 5 segundos
+    }
+
+    // Limpa o intervalo se o componente for desmontado ou se o pixData mudar
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [pixData, navigate]);
 
   // --- Lida com o processo de Checkout ---
   const handleCheckout = async (e) => {
@@ -82,16 +120,14 @@ export default function Checkout() {
     setMessage({ text: "Processando seu pedido...", type: "info" });
 
     try {
-      // Formata os dados do cliente vindos do banco
       const customerData = {
-        name: userData.nomeCompleto, // Ajuste para o nome exato do campo no seu banco
+        name: userData.nomeCompleto,
         email: userData.email,
-        document: userData.cpf ? String(userData.cpf).replace(/\D/g, "") : "", // Garante apenas números
+        document: userData.cpf ? String(userData.cpf).replace(/\D/g, "") : "",
         type: "individual",
         phones: {
           mobile_phone: {
             country_code: "55",
-            // Pega os 2 primeiros dígitos para DDD e o resto para número
             area_code: userData.telefone
               ? String(userData.telefone).substring(0, 2)
               : "",
@@ -104,7 +140,7 @@ export default function Checkout() {
 
       const itemsData = [
         {
-          amount: 12990, // Valor em centavos (R$ 129,90)
+          amount: 12990,
           description: "Consulta Medicinal - 15 minutos",
           quantity: 1,
           code: "PROD123",
@@ -134,7 +170,6 @@ export default function Checkout() {
 
         const tokenData = tokenResponse.data;
 
-        // Enviar para o SEU backend
         const response = await api.post("/api/checkout/cartao", {
           cardToken: tokenData.id,
           installments: 1,
@@ -146,7 +181,7 @@ export default function Checkout() {
 
         if (result.success) {
           setMessage({ text: "🎉 Cartão aprovado!", type: "success" });
-          navigate("/chat"); // Redireciona para a página de sucesso
+          navigate("/chat");
         }
       } else {
         // --- LÓGICA PIX ---
@@ -159,8 +194,11 @@ export default function Checkout() {
 
         if (result.qrCode) {
           setPixData(result);
-          setMessage({ text: "PIX gerado com sucesso!", type: "success" });
-          navigate("/chat"); // Redireciona para a página de sucesso
+          setMessage({
+            text: "PIX gerado com sucesso! Aguardando pagamento...",
+            type: "info",
+          });
+          // O useEffect de checagem começará a atuar a partir daqui
         }
       }
     } catch (error) {
@@ -196,7 +234,6 @@ export default function Checkout() {
   // --- Interface do Checkout ---
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-8 font-sans">
-      {/* Container Principal */}
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl flex flex-col md:flex-row overflow-hidden transition-all">
         {/* Lado Esquerdo - Imagem e Descrição do Produto */}
         <div className="hidden md:block md:w-1/2 relative bg-gray-900">
@@ -205,22 +242,32 @@ export default function Checkout() {
             alt="Ilustração de Checkout"
             className="absolute inset-0 w-full h-full object-cover opacity-60"
           />
-
-          {/* Overlay com Gradiente para dar leitura ao texto */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-
-          {/* Conteúdo sobre a Imagem */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
           <div className="absolute inset-0 p-10 flex flex-col justify-end text-white">
             <span className="bg-[#34C759] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider w-max mb-4">
               Agendamento
             </span>
-            <h2 className="text-3xl font-bold mb-3">Consulta & Diagnóstico</h2>
+            <h2 className="text-3xl font-bold mb-4">Consulta & Diagnóstico</h2>
+            <div className="flex items-center gap-4 mb-6 bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/20">
+              <img
+                src="https://res.cloudinary.com/dqvujibkn/image/upload/v1774995510/220930_Med19Ufac_Studio_7507.jpg_rylikg.jpg"
+                alt="Dr. João Marcos Santos da Silva"
+                className="w-16 h-16 rounded-full object-cover border-2 border-[#34C759] shadow-lg"
+              />
+              <div>
+                <h3 className="font-bold text-lg leading-tight text-white">
+                  Dr. João Marcos Santos da Silva
+                </h3>
+                <p className="text-[#34C759] text-sm font-semibold mt-1">
+                  Psiquiatria • CRM-MT 14316
+                </p>
+              </div>
+            </div>
             <p className="text-gray-200 text-sm leading-relaxed mb-6">
               Avaliação completa com nossos especialistas. Inclui análise
               detalhada do seu histórico, exames físicos preliminares e a
               elaboração de um plano de tratamento totalmente personalizado.
             </p>
-
             <ul className="flex flex-col gap-3 text-sm text-gray-300 mb-8">
               <li className="flex items-center gap-2">
                 <span className="text-[#34C759] text-lg">✔</span> Duração
@@ -235,7 +282,6 @@ export default function Checkout() {
                 presencial ou online
               </li>
             </ul>
-
             <div className="pt-6 border-t border-white/20 flex justify-between items-center">
               <span className="text-lg text-gray-300">Total a pagar</span>
               <span className="text-3xl font-bold">R$ 129,90</span>
@@ -374,6 +420,12 @@ export default function Checkout() {
                 Pedido: <span className="text-gray-600">{pixData.orderId}</span>
               </p>
 
+              {/* Status de carregamento para indicar que está aguardando o pagamento */}
+              <div className="mb-4 text-sm font-semibold text-[#34C759] animate-pulse flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#34C759]"></span>
+                Aguardando pagamento...
+              </div>
+
               <div className="bg-white p-4 border-2 border-dashed border-[#34C759] rounded-xl mb-4">
                 <img
                   src={pixData.qrCodeUrl}
@@ -402,7 +454,9 @@ export default function Checkout() {
               className={`mt-6 p-4 rounded-xl text-sm text-center font-medium transition-all ${
                 message.type === "error"
                   ? "bg-red-50 text-red-600 border border-red-100"
-                  : "bg-green-50 text-green-700 border border-green-100"
+                  : message.type === "info"
+                    ? "bg-blue-50 text-blue-700 border border-blue-100"
+                    : "bg-green-50 text-green-700 border border-green-100"
               }`}
             >
               {message.text}
