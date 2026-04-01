@@ -173,6 +173,8 @@ export default function AuthScreen() {
       console.log("Usuário logado:", userCredential.user.uid);
       alert("Login efetuado com sucesso!");
 
+      localStorage.setItem("@userUid", userCredential.user.uid); // Armazena o UID do usuário logado
+
       if (data.email === "admin-doctor@icloud.com") {
         navigate("/medical-area");
       } else {

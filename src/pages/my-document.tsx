@@ -2,7 +2,18 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
 import { QRCodeSVG } from "qrcode.react";
 import { v4 as uuidv4 } from "uuid";
-import { doc, setDoc, onSnapshot, deleteDoc } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  onSnapshot,
+  deleteDoc,
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+} from "firebase/firestore";
 import {
   LayoutDashboard,
   CalendarPlus,
@@ -33,8 +44,15 @@ import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
 import { auth, db } from "../../firebaseConfig";
 
-// MOCKS DE DADOS - Documentos
-const mockDocumentos = [];
+// Interface para o documento salvo no Firestore
+interface Documento {
+  id: string;
+  type: string;
+  status: string;
+  frente: string | null;
+  verso: string | null;
+  createdAt: any;
+}
 
 export default function MyDocuments() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -42,6 +60,10 @@ export default function MyDocuments() {
 
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [selectedDocumentType, setSelectedDocumentType] = useState("");
+
+  // Estado para armazenar os documentos do Firestore
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estados para o fluxo de Captura
   const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
@@ -60,14 +82,8 @@ export default function MyDocuments() {
     verso: null as string | null,
   });
 
-  // Referência para a Webcam (usado como fallback no Desktop)
   const webcamRef = useRef<Webcam>(null);
 
-  // =========================================================================
-  // AJUSTE DE REDE LOCAL PARA O QR CODE
-  // Se estiver no localhost, usa o seu IP para o celular conseguir acessar.
-  // Se usar Vite em vez de Create React App, mude a porta de 3000 para 5173.
-  // =========================================================================
   const qrCodeBaseUrl = window.location.origin;
 
   const getStatusStyle = (status: string) => {
@@ -96,7 +112,37 @@ export default function MyDocuments() {
     }
   };
 
-  // 1. Função para Iniciar o Fluxo Mobile (Gera QR Code e escuta Firebase)
+  // =========================================================================
+  // INTEGRAÇÃO FIRESTORE: BUSCAR DOCUMENTOS
+  // =========================================================================
+  useEffect(() => {
+    const userUid = localStorage.getItem("@userUid");
+
+    console.log(userUid, " - Usuário atual do Firebase Auth");
+
+    // Cria a query para buscar os documentos deste usuário, ordenados pelos mais recentes
+    const q = query(collection(db, "document"));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Documento[];
+
+      console.log(userUid, " - ID do usuário logado");
+
+      const filteredDocs = docsData.filter((doc) => doc.userId === userUid);
+
+      console.log("Documentos totais do Firestore:", filteredDocs);
+
+      // console.log("Documentos atualizados do Firestore:", docsData);
+      setDocumentos(filteredDocs);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 1. Função para Iniciar o Fluxo Mobile
   const startMobileCapture = async () => {
     const newSessionId = uuidv4();
     setSessionId(newSessionId);
@@ -104,7 +150,6 @@ export default function MyDocuments() {
     setCaptureStep("QR");
 
     try {
-      // Cria a sessão no Firestore
       await setDoc(doc(db, "captureSessions", newSessionId), {
         status: "waiting",
         frente: null,
@@ -112,7 +157,6 @@ export default function MyDocuments() {
         createdAt: new Date(),
       });
 
-      // Escuta as alterações no documento criado
       const unsubscribe = onSnapshot(
         doc(db, "captureSessions", newSessionId),
         (docSnap) => {
@@ -124,7 +168,7 @@ export default function MyDocuments() {
               verso: data.verso,
             });
             setCaptureStep("CONCLUIDO");
-            if (unsubscribeRef.current) unsubscribeRef.current(); // Para de escutar
+            if (unsubscribeRef.current) unsubscribeRef.current();
           }
         },
       );
@@ -147,19 +191,16 @@ export default function MyDocuments() {
     }
   }, [captureStep, webcamRef]);
 
-  // Função para pular etapa do QR Code e usar Webcam do Desktop
   const handleSkipStep = () => {
     if (captureStep === "QR") setCaptureStep("FRENTE");
   };
 
   // 3. Função para fechar modal e limpar Firebase
   const handleCloseModal = async () => {
-    // Para de escutar o Firebase se fechar antes
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
     }
 
-    // Deleta a sessão temporária para limpar o banco
     if (sessionId) {
       try {
         await deleteDoc(doc(db, "captureSessions", sessionId));
@@ -172,23 +213,60 @@ export default function MyDocuments() {
     setTimeout(() => {
       setCaptureStep("QR");
       setSessionId(null);
-      setCapturedData({ qr: null, frente: null, verso: null });
     }, 300);
   };
 
-  // 4. Função final para enviar os dados para seu Backend/Storage
+  // 4. Concluir captura modal (Mantém os dados no state 'capturedData')
   const handleFinalize = async () => {
-    console.log("Dados capturados prontos para envio:", capturedData);
-    // TODO: Adicionar lógica de upload para Cloudinary ou Firebase Storage aqui
-
     await handleCloseModal();
+  };
+
+  // =========================================================================
+  // INTEGRAÇÃO FIRESTORE: SALVAR DOCUMENTO
+  // =========================================================================
+  const handleSubmitDocument = async () => {
+    if (!selectedDocumentType) {
+      alert("Por favor, selecione o tipo do documento.");
+      return;
+    }
+
+    if (!capturedData.frente) {
+      alert("Por favor, adicione pelo menos a foto da frente do documento.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const user = auth.currentUser;
+      const userId = user?.uid || "USER_MOCK_ID";
+
+      // Adiciona na coleção "documents"
+      await addDoc(collection(db, "documents"), {
+        userId: userId,
+        type: selectedDocumentType,
+        frente: capturedData.frente,
+        verso: capturedData.verso,
+        status: "Em Análise", // Status inicial padrão
+        createdAt: Timestamp.now(),
+      });
+
+      // Limpa o formulário
+      setCapturedData({ qr: null, frente: null, verso: null });
+      setSelectedDocumentType("");
+      alert("Documento enviado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar documento no Firestore:", error);
+      alert("Ocorreu um erro ao enviar seu documento.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const videoConstraints = {
     facingMode: "environment",
   };
 
-  // Limpa o listener ao desmontar o componente
   useEffect(() => {
     return () => {
       if (unsubscribeRef.current) unsubscribeRef.current();
@@ -197,7 +275,7 @@ export default function MyDocuments() {
 
   return (
     <div className="flex min-h-screen bg-[#f8f9f8] font-sans text-gray-800">
-      {/* Sidebar Padrão Canna Consult */}
+      {/* Sidebar Padrão Canna Consult (Omitida visualmente para focar na resposta, mas mantida no código) */}
       <aside className="w-64 bg-white hidden md:flex flex-col shadow-[1px_0_5px_rgba(0,0,0,0.05)] z-10 sticky top-0 h-screen">
         <div className="h-32 bg-gradient-to-b from-[#34C759] to-[#5add7a] flex items-center justify-center shrink-0">
           <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-white shadow-sm">
@@ -413,32 +491,82 @@ export default function MyDocuments() {
                     Arquivo <span className="text-red-500">*</span>
                   </label>
 
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-[#f0fdf4] hover:border-[#34C759] transition-colors cursor-pointer group h-32">
-                      <div className="w-10 h-10 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-2 group-hover:bg-[#34C759] group-hover:text-white transition-colors">
-                        <UploadCloud size={20} />
-                      </div>
-                      <p className="text-xs font-medium text-gray-700">
-                        Fazer Upload
-                      </p>
+                  {/* PREVIEW DA IMAGEM CASO JÁ TENHA SIDO CAPTURADA */}
+                  {capturedData.frente || capturedData.verso ? (
+                    <div className="flex gap-2 mb-3">
+                      {capturedData.frente && (
+                        <div className="relative w-1/2 h-24 rounded-lg overflow-hidden border border-[#34C759]">
+                          <img
+                            src={capturedData.frente}
+                            className="w-full h-full object-cover"
+                            alt="Frente"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[10px] text-center py-1">
+                            Frente
+                          </div>
+                        </div>
+                      )}
+                      {capturedData.verso && (
+                        <div className="relative w-1/2 h-24 rounded-lg overflow-hidden border border-[#34C759]">
+                          <img
+                            src={capturedData.verso}
+                            className="w-full h-full object-cover"
+                            alt="Verso"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[10px] text-center py-1">
+                            Verso
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        onClick={() =>
+                          setCapturedData({
+                            qr: null,
+                            frente: null,
+                            verso: null,
+                          })
+                        }
+                        className="absolute right-2 top-2 bg-red-500 text-white p-1 rounded-full shadow-md"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-[#f0fdf4] hover:border-[#34C759] transition-colors cursor-pointer group h-32">
+                        <div className="w-10 h-10 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-2 group-hover:bg-[#34C759] group-hover:text-white transition-colors">
+                          <UploadCloud size={20} />
+                        </div>
+                        <p className="text-xs font-medium text-gray-700">
+                          Fazer Upload
+                        </p>
+                      </div>
 
-                    <div
-                      onClick={startMobileCapture}
-                      className="border-2 border-[#34C759] bg-[#f0fdf4] rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-[#e1fce9] transition-colors cursor-pointer group h-32"
-                    >
-                      <div className="w-10 h-10 bg-[#34C759] text-white rounded-full flex items-center justify-center mb-2">
-                        <Camera size={20} />
+                      <div
+                        onClick={startMobileCapture}
+                        className="border-2 border-[#34C759] bg-[#f0fdf4] rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-[#e1fce9] transition-colors cursor-pointer group h-32"
+                      >
+                        <div className="w-10 h-10 bg-[#34C759] text-white rounded-full flex items-center justify-center mb-2">
+                          <Camera size={20} />
+                        </div>
+                        <p className="text-xs font-medium text-[#2eaa4d]">
+                          Usar Câmera
+                        </p>
                       </div>
-                      <p className="text-xs font-medium text-[#2eaa4d]">
-                        Usar Câmera
-                      </p>
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                <button className="w-full bg-[#34C759] text-white font-medium py-2.5 rounded-lg hover:bg-[#2eaa4d] transition-colors shadow-sm">
-                  Enviar Documento
+                <button
+                  onClick={handleSubmitDocument}
+                  disabled={isSubmitting}
+                  className={`w-full text-white font-medium py-2.5 rounded-lg transition-colors shadow-sm ${
+                    isSubmitting
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-[#34C759] hover:bg-[#2eaa4d]"
+                  }`}
+                >
+                  {isSubmitting ? "Enviando..." : "Enviar Documento"}
                 </button>
               </div>
             </div>
@@ -449,18 +577,70 @@ export default function MyDocuments() {
                   Documentos Enviados
                 </h2>
                 <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full font-medium">
-                  {mockDocumentos.length} arquivos
+                  {documentos.length} arquivos
                 </span>
               </div>
-              <div className="text-center py-10 text-gray-500 text-sm">
-                Nenhum documento enviado ainda.
-              </div>
+
+              {documentos.length === 0 ? (
+                <div className="text-center py-10 text-gray-500 text-sm flex flex-col items-center justify-center h-40 border-2 border-dashed border-gray-100 rounded-xl">
+                  <File size={32} className="text-gray-300 mb-3" />
+                  Nenhum documento enviado ainda.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {documentos.map((docItem) => (
+                    <div
+                      key={docItem.id}
+                      className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:shadow-sm transition-shadow"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-[#f0fdf4] text-[#34C759] rounded-lg flex items-center justify-center">
+                          {docItem.type === "Passaporte" ? (
+                            <Book size={24} />
+                          ) : docItem.type === "CNH" ? (
+                            <CreditCard size={24} />
+                          ) : (
+                            <IdCard size={24} />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-800">
+                            {docItem.type}
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            Enviado em:{" "}
+                            {docItem.createdAt?.toDate
+                              ? docItem.createdAt.toDate().toLocaleDateString()
+                              : "Data desconhecida"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center ${getStatusStyle(docItem.status)}`}
+                        >
+                          {getStatusIcon(docItem.status)}
+                          {docItem.status}
+                        </span>
+
+                        <button
+                          className="text-gray-400 hover:text-[#34C759] transition-colors"
+                          title="Baixar Documento"
+                        >
+                          <Download size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </main>
 
-      {/* MODAL DE CAPTURA DE DOCUMENTO */}
+      {/* MODAL DE CAPTURA DE DOCUMENTO (Restante inalterado) */}
       {isCaptureModalOpen && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
@@ -530,7 +710,6 @@ export default function MyDocuments() {
                 )}
               </div>
 
-              {/* Utilizando a variável qrCodeBaseUrl aqui! */}
               {captureStep === "QR" ? (
                 <div className="w-full bg-gray-50 aspect-[4/3] rounded-xl flex flex-col items-center justify-center p-6 mb-6 shadow-inner border border-gray-200">
                   {sessionId && (
@@ -542,7 +721,7 @@ export default function MyDocuments() {
                         includeMargin={true}
                       />
                       <p className="mt-4 text-sm text-center text-gray-500 font-medium">
-                        Aponte a câmera do seu celular para este código <br />
+                        Aponte a câmera do seu celular para este código <br />{" "}
                         para enviar seus documentos.
                       </p>
                     </>
@@ -597,7 +776,7 @@ export default function MyDocuments() {
                 >
                   {captureStep === "CONCLUIDO" ? (
                     <>
-                      <CheckCircle size={20} /> Finalizar e Anexar
+                      <CheckCircle size={20} /> Confirmar Imagens
                     </>
                   ) : (
                     <>
