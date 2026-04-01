@@ -21,39 +21,39 @@ import { auth } from "../../firebaseConfig";
 
 // MOCKS DE DADOS
 const mockReceitas = [
-  {
-    id: 1,
-    title: "Óleo CBD 10% Full Spectrum",
-    doctor: "Dr. Carlos Eduardo",
-    date: "31/03/2026",
-    status: "Ativa",
-  },
-  {
-    id: 2,
-    title: "Gomas THC/CBD 1:1",
-    doctor: "Dra. Ana Flávia",
-    date: "15/02/2026",
-    status: "Vencida",
-  },
+  // {
+  //   id: 1,
+  //   title: "Óleo CBD 10% Full Spectrum",
+  //   doctor: "Dr. Carlos Eduardo",
+  //   date: "31/03/2026",
+  //   status: "Ativa",
+  // },
+  // {
+  //   id: 2,
+  //   title: "Gomas THC/CBD 1:1",
+  //   doctor: "Dra. Ana Flávia",
+  //   date: "15/02/2026",
+  //   status: "Vencida",
+  // },
 ];
 
 const mockConsultas = [
-  {
-    id: 1,
-    doctor: "Dra. Ana Flávia",
-    specialty: "Clínica Médica",
-    date: "10/04/2026",
-    time: "14:30",
-    status: "Agendada",
-  },
-  {
-    id: 2,
-    doctor: "Dr. Carlos Eduardo",
-    specialty: "Neurologia",
-    date: "25/03/2026",
-    time: "09:00",
-    status: "Realizada",
-  },
+  // {
+  //   id: 1,
+  //   doctor: "Dra. Ana Flávia",
+  //   specialty: "Clínica Médica",
+  //   date: "10/04/2026",
+  //   time: "14:30",
+  //   status: "Agendada",
+  // },
+  // {
+  //   id: 2,
+  //   doctor: "Dr. Carlos Eduardo",
+  //   specialty: "Neurologia",
+  //   date: "25/03/2026",
+  //   time: "09:00",
+  //   status: "Realizada",
+  // },
 ];
 
 export default function PatientArea() {

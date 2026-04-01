@@ -22,33 +22,33 @@ import { auth } from "../../firebaseConfig";
 
 // MOCKS DE DADOS - Consultas
 const mockConsultas = [
-  {
-    id: 1,
-    doctor: "Dra. Ana Flávia",
-    specialty: "Clínica Médica",
-    date: "10/04/2026",
-    time: "14:30",
-    status: "Agendada",
-    type: "Online",
-  },
-  {
-    id: 2,
-    doctor: "Dr. Carlos Eduardo",
-    specialty: "Neurologia",
-    date: "25/03/2026",
-    time: "09:00",
-    status: "Realizada",
-    type: "Online",
-  },
-  {
-    id: 3,
-    doctor: "Dra. Juliana Silva",
-    specialty: "Psiquiatria",
-    date: "10/01/2026",
-    time: "11:00",
-    status: "Cancelada",
-    type: "Presencial",
-  },
+  // {
+  //   id: 1,
+  //   doctor: "Dra. Ana Flávia",
+  //   specialty: "Clínica Médica",
+  //   date: "10/04/2026",
+  //   time: "14:30",
+  //   status: "Agendada",
+  //   type: "Online",
+  // },
+  // {
+  //   id: 2,
+  //   doctor: "Dr. Carlos Eduardo",
+  //   specialty: "Neurologia",
+  //   date: "25/03/2026",
+  //   time: "09:00",
+  //   status: "Realizada",
+  //   type: "Online",
+  // },
+  // {
+  //   id: 3,
+  //   doctor: "Dra. Juliana Silva",
+  //   specialty: "Psiquiatria",
+  //   date: "10/01/2026",
+  //   time: "11:00",
+  //   status: "Cancelada",
+  //   type: "Presencial",
+  // },
 ];
 
 export default function MyConsultations() {

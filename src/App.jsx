@@ -17,6 +17,8 @@ import Config from "./pages/config";
 import MedicalArea from "./pages/medical-area";
 import Checkout from "./pages/checkout";
 
+import MobileCapture from "./pages/mobile-capture";
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {
@@ -42,6 +44,10 @@ function App() {
           <Route path="/config" element={<Config />} />
           <Route path="/medical-area" element={<MedicalArea />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route
+            path="/mobile-capture/:sessionId"
+            element={<MobileCapture />}
+          />{" "}
         </Routes>
       </Router>
     </div>
