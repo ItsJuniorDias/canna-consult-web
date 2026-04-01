@@ -400,7 +400,7 @@ export default function AuthScreen() {
               </div>
 
               <div>
-                <label className={labelClass}>Telefone *</label>
+                <label className={labelClass}>Celular *</label>
                 <input
                   type="text"
                   placeholder="(11) 99999-9999"

@@ -313,7 +313,7 @@ export default function Config() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1">
-                      Telefone <span className="text-gray-500">*</span>
+                      Celular <span className="text-gray-500">*</span>
                     </label>
                     <input
                       type="text"

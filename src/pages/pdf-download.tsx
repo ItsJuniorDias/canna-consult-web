@@ -6,6 +6,9 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
+// IMPORTAÇÃO DO LOGO
+import logo from "../assets/vite.png";
+
 export default function PDFDownload() {
   const [laudo, setLaudo] = useState("");
   const [userData, setUserData] = useState(null);
@@ -143,7 +146,14 @@ export default function PDFDownload() {
       <div className="w-full max-w-[210mm] bg-white shadow-2xl border border-gray-300 print:shadow-none print:border-none print:max-w-none print:w-full overflow-hidden">
         <div className="bg-white text-gray-900 mx-auto px-10 py-12 print:px-0 print:py-0">
           {/* Cabeçalho */}
-          <div className="border-b-2 border-gray-800 pb-4 mb-6 text-center">
+          <div className="border-b-2 border-gray-800 pb-4 mb-6 flex flex-col items-center text-center">
+            {/* LOGOTIPO INSERIDO AQUI */}
+            <img
+              src={logo}
+              alt="Canna Consult Logo"
+              className="h-20 mb-4 object-contain rounded-2xl"
+            />
+
             <h1 className="text-2xl font-bold uppercase tracking-wide">
               Laudo Médico para Uso de Cannabis Medicinal
             </h1>

@@ -84,6 +84,7 @@ export default function ChatScreen() {
             Passo 5 (Escrever Laudo): Com base em TODAS as informações fornecidas, redija um "Laudo Médico para Uso de Cannabis Medicinal" completo e formal, resumo clínico, sem a identificação do paciente, CID (sugerido) e a prescrição recomendada (RESTRITA ÀS PREFERÊNCIAS). Formate lindamente usando Markdown. AO FINAL DO LAUDO, inclua obrigatoriamente a tag [FIM_DA_CONSULTA].
 
             Regras Gerais:
+            - Médico Responsável: Dr. João Marcos Santos da Silva, CRM-MT 14316 - Especialidade Psiquiatria.
             - Na primeira mensagem (Passo 1), lembre que você é uma IA e não substitui um médico.
             - Seja empático e profissional.
             - Não é um documento simulado, pois será assinado por um médico de verdade, então não deixe nada explícito que possa indicar que é uma simulação.
