@@ -15,6 +15,35 @@ import {
 import { useNavigate } from "react-router-dom";
 
 /* =========================================
+   FUNÇÕES DE MÁSCARA
+   ========================================= */
+const cpfMask = (value) => {
+  if (!value) return "";
+  return value
+    .replace(/\D/g, "") // Remove tudo que não é dígito
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+    .replace(/(-\d{2})\d+?$/, "$1"); // Captura 2 números depois do traço
+};
+
+const phoneMask = (value) => {
+  if (!value) return "";
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d)(\d{4})$/, "$1-$2"); // Lida com 8 ou 9 dígitos dinamicamente
+};
+
+const cepMask = (value) => {
+  if (!value) return "";
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{5})(\d)/, "$1-$2")
+    .replace(/(-\d{3})\d+?$/, "$1");
+};
+
+/* =========================================
    SCHEMAS DE VALIDAÇÃO (ZOD)
    ========================================= */
 
@@ -42,7 +71,9 @@ const registerSchema = z
         /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
         "Formato de CPF inválido (000.000.000-00)",
       ),
-    telefone: z.string().optional(),
+    telefone: z
+      .string()
+      .min(14, "O telefone é obrigatório (mínimo 10 dígitos)"),
     cep: z.string().optional(),
     endereco: z.string().optional(),
     numero: z.string().optional(),
@@ -99,6 +130,37 @@ export default function AuthScreen() {
     },
     mode: "onTouched",
   });
+
+  // Extraindo funções de onChange para injetar as máscaras corretamente sem perder as refs do Hook Form
+  const { onChange: cpfOnChange, ...cpfRest } = registerForm.register("cpf");
+  const { onChange: telOnChange, ...telRest } =
+    registerForm.register("telefone");
+  const { onChange: cepOnChange, ...cepRest } = registerForm.register("cep");
+
+  // Função para buscar o CEP na API do ViaCEP
+  const handleCepSearch = async (cepLimpo) => {
+    try {
+      const response = await fetch(
+        `https://viacep.com.br/ws/${cepLimpo}/json/`,
+      );
+      const data = await response.json();
+
+      if (!data.erro) {
+        // Atualiza os campos do formulário automaticamente usando setValue
+        registerForm.setValue("endereco", data.logradouro, {
+          shouldValidate: true,
+        });
+        registerForm.setValue("cidade", data.localidade, {
+          shouldValidate: true,
+        });
+        // Se precisar do bairro ou estado, você pode adicionar:
+        // registerForm.setValue("bairro", data.bairro);
+        // registerForm.setValue("estado", data.uf);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar o CEP:", error);
+    }
+  };
 
   // Handlers de submissão
   const onLoginSubmit = async (data) => {
@@ -324,7 +386,11 @@ export default function AuthScreen() {
                   type="text"
                   placeholder="000.000.000-00"
                   className={getInputClass(registerForm.formState.errors.cpf)}
-                  {...registerForm.register("cpf")}
+                  {...cpfRest}
+                  onChange={(e) => {
+                    e.target.value = cpfMask(e.target.value);
+                    cpfOnChange(e);
+                  }}
                 />
                 {registerForm.formState.errors.cpf && (
                   <p className={errorMsgClass}>
@@ -334,15 +400,24 @@ export default function AuthScreen() {
               </div>
 
               <div>
-                <label className={labelClass}>Telefone</label>
+                <label className={labelClass}>Telefone *</label>
                 <input
                   type="text"
                   placeholder="(11) 99999-9999"
                   className={getInputClass(
                     registerForm.formState.errors.telefone,
                   )}
-                  {...registerForm.register("telefone")}
+                  {...telRest}
+                  onChange={(e) => {
+                    e.target.value = phoneMask(e.target.value);
+                    telOnChange(e);
+                  }}
                 />
+                {registerForm.formState.errors.telefone && (
+                  <p className={errorMsgClass}>
+                    {registerForm.formState.errors.telefone.message}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -351,7 +426,17 @@ export default function AuthScreen() {
                   type="text"
                   placeholder="00000-000"
                   className={getInputClass(registerForm.formState.errors.cep)}
-                  {...registerForm.register("cep")}
+                  {...cepRest}
+                  onChange={(e) => {
+                    e.target.value = cepMask(e.target.value);
+                    cepOnChange(e);
+
+                    // Se o CEP estiver completo (9 caracteres com o traço)
+                    if (e.target.value.length === 9) {
+                      const cepLimpo = e.target.value.replace(/\D/g, "");
+                      handleCepSearch(cepLimpo);
+                    }
+                  }}
                 />
               </div>
 
