@@ -14,6 +14,8 @@ import MyReceipts from "./pages/my-recipes";
 import MyConsultations from "./pages/my-consultations";
 import MyDocuments from "./pages/my-document";
 import Config from "./pages/config";
+import MedicalArea from "./pages/medical-area";
+import Checkout from "./pages/checkout";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -38,6 +40,8 @@ function App() {
           <Route path="/my-consultations" element={<MyConsultations />} />
           <Route path="/my-documents" element={<MyDocuments />} />
           <Route path="/config" element={<Config />} />
+          <Route path="/medical-area" element={<MedicalArea />} />
+          <Route path="/checkout" element={<Checkout />} />
         </Routes>
       </Router>
     </div>

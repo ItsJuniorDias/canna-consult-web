@@ -1,4 +1,4 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -42,16 +42,16 @@ const registerSchema = z
         /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
         "Formato de CPF inválido (000.000.000-00)",
       ),
-    telefone: z.string().optional(), // Opcional conforme o design original
-    cep: z.string().optional(), // Opcional
-    endereco: z.string().optional(), // Opcional
-    numero: z.string().optional(), // Opcional
-    complemento: z.string().optional(), // Opcional
-    cidade: z.string().optional(), // Opcional
+    telefone: z.string().optional(),
+    cep: z.string().optional(),
+    endereco: z.string().optional(),
+    numero: z.string().optional(),
+    complemento: z.string().optional(),
+    cidade: z.string().optional(),
     dataNascimento: z
       .string()
       .min(1, "A data de nascimento é obrigatória")
-      .refine((date) => !isNaN(Date.parse(date)), "Data inválida"), // Validação básica de data
+      .refine((date) => !isNaN(Date.parse(date)), "Data inválida"),
     password: z
       .string()
       .min(8, "Mínimo 8 dígitos")
@@ -63,7 +63,7 @@ const registerSchema = z
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
-    path: ["confirmPassword"], // Define onde o erro vai aparecer
+    path: ["confirmPassword"],
   });
 
 /* =========================================
@@ -71,7 +71,6 @@ const registerSchema = z
    ========================================= */
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
-
   const navigate = useNavigate();
 
   // 1. Instância do Hook Form para Login
@@ -98,24 +97,25 @@ export default function AuthScreen() {
       confirmPassword: "",
       aceitouTermos: false,
     },
-    mode: "onTouched", // Valida ao tocar/sair do campo
+    mode: "onTouched",
   });
 
   // Handlers de submissão
   const onLoginSubmit = async (data) => {
     try {
-      // Tenta logar o usuário no Firebase Auth
       const userCredential = await signInWithEmailAndPassword(
         auth,
         data.email,
         data.password,
       );
       console.log("Usuário logado:", userCredential.user.uid);
-
       alert("Login efetuado com sucesso!");
-      // Aqui você normalmente redirecionaria o usuário:
 
-      navigate("/define-objective"); // Redireciona para a próxima etapa da avaliação
+      if (data.email === "admin-doctor@icloud.com") {
+        navigate("/medical-area");
+      } else {
+        navigate("/define-objective");
+      }
     } catch (error) {
       console.error("Erro no login:", error);
       if (
@@ -132,7 +132,6 @@ export default function AuthScreen() {
 
   const onRegisterSubmit = async (data) => {
     try {
-      // 1. Cria o usuário no Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
@@ -140,32 +139,24 @@ export default function AuthScreen() {
       );
       const user = userCredential.user;
 
-      // 2. Separa os dados de autenticação dos dados de perfil
-      // É muito importante NÃO salvar a senha e a confirmação em texto plano no banco de dados
       const { password, confirmPassword, aceitouTermos, ...dadosDoUsuario } =
         data;
 
-      // 3. Salva os dados completos do usuário no Firestore
-      // Usamos o UID gerado pelo Auth como o ID do documento na coleção "users"
       await setDoc(doc(db, "users", user.uid), {
         ...dadosDoUsuario,
         uid: user.uid,
         createdAt: new Date().toISOString(),
-        role: "paciente", // Opcional: útil para controle de permissões depois
+        role: "paciente",
       });
 
       console.log("Conta criada com sucesso:", user.uid);
       alert("Conta criada com sucesso!");
 
-      // Opcional: Limpar formulário e voltar para login, ou redirecionar direto para o app
       registerForm.reset();
       setIsLogin(true);
     } catch (error) {
       console.error("Erro ao criar conta:", error);
-
-      // Tratamento de erros comuns do Firebase
       if (error.code === "auth/email-already-in-use") {
-        // Se você quiser, pode setar esse erro direto no React Hook Form:
         registerForm.setError("email", {
           type: "manual",
           message: "Este email já está cadastrado.",
@@ -178,17 +169,13 @@ export default function AuthScreen() {
     }
   };
 
-  // Função auxiliar para classes de input com erro dinâmico
   const getInputClass = (hasError) => {
     return `w-full px-4 py-3 rounded-xl border transition-all text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#34C759] focus:border-transparent ${
-      hasError
-        ? "border-red-500" // Apenas a borda vermelha estática (sem focus vermelho)
-        : "border-gray-300" // Borda cinza padrão
+      hasError ? "border-red-500" : "border-gray-300"
     }`;
   };
 
   const labelClass = "block text-sm font-medium text-gray-600 mb-1";
-  // Classe para mensagens de erro
   const errorMsgClass = "text-xs text-red-500 mt-1 pl-1";
 
   return (
@@ -210,9 +197,7 @@ export default function AuthScreen() {
       {/* Auth Card */}
       <div className="w-full max-w-[480px] bg-white rounded-[2rem] p-8 sm:p-10 shadow-sm border border-gray-100">
         {isLogin ? (
-          /* =========================================
-             FORMULÁRIO DE LOGIN (React Hook Form + Zod)
-             ========================================= */
+          /* FORMULÁRIO DE LOGIN */
           <div className="animate-fade-in">
             <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">
               Bem vindo ao Canna Consult!
@@ -278,7 +263,7 @@ export default function AuthScreen() {
                 <button
                   onClick={() => {
                     setIsLogin(false);
-                    loginForm.reset(); // Limpa o formulário de login ao trocar
+                    loginForm.reset();
                   }}
                   className="font-bold text-gray-800 hover:underline bg-transparent border-none cursor-pointer"
                 >
@@ -288,9 +273,7 @@ export default function AuthScreen() {
             </div>
           </div>
         ) : (
-          /* =========================================
-             FORMULÁRIO DE CADASTRO (React Hook Form + Zod)
-             ========================================= */
+          /* FORMULÁRIO DE CADASTRO */
           <div className="animate-fade-in">
             <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">
               Criar Conta
@@ -342,9 +325,6 @@ export default function AuthScreen() {
                   placeholder="000.000.000-00"
                   className={getInputClass(registerForm.formState.errors.cpf)}
                   {...registerForm.register("cpf")}
-                  // Nota: Para aplicar máscaras reais (como 000.000...),
-                  // recomendo usar uma biblioteca como `react-input-mask`
-                  // em conjunto com o Controller do React Hook Form.
                 />
                 {registerForm.formState.errors.cpf && (
                   <p className={errorMsgClass}>
@@ -450,7 +430,6 @@ export default function AuthScreen() {
                   )}
                   {...registerForm.register("password")}
                 />
-                {/* Mostra o erro ou a dica original se não houver erro */}
                 {registerForm.formState.errors.password ? (
                   <p className={errorMsgClass}>
                     {registerForm.formState.errors.password.message}
@@ -503,7 +482,6 @@ export default function AuthScreen() {
 
               <button
                 type="submit"
-                // Desabilita visualmente o botão se houver erros (opcional)
                 className={`w-full bg-[#34C759] hover:bg-[#28A745] text-white font-bold py-3.5 rounded-xl transition-colors shadow-sm mt-4 ${
                   registerForm.formState.isSubmitting
                     ? "opacity-70 cursor-not-allowed"
@@ -521,7 +499,7 @@ export default function AuthScreen() {
               <button
                 onClick={() => {
                   setIsLogin(true);
-                  registerForm.reset(); // Limpa o formulário de cadastro ao trocar
+                  registerForm.reset();
                 }}
                 className="text-sm font-bold text-gray-800 hover:underline bg-transparent border-none cursor-pointer"
               >
@@ -532,7 +510,7 @@ export default function AuthScreen() {
         )}
       </div>
 
-      {/* Footer Links (Mantidos iguais) */}
+      {/* Footer Links */}
       <div className="mt-10 flex flex-col items-center space-y-4 pb-8">
         <div className="flex space-x-6">
           {["Sobre Nós", "Contato", "Política de Privacidade"].map((link) => (

@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
-// IMPORTANTE: Mantenha o caminho correto para o seu Firebase
 import { auth, db } from "../../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
 export default function PDFDownload() {
@@ -12,7 +11,7 @@ export default function PDFDownload() {
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const navigate = useNavigate(); // 2. Instancie o hook de navegação
+  const navigate = useNavigate();
 
   useEffect(() => {
     // 1. Recupera o laudo
@@ -43,13 +42,51 @@ export default function PDFDownload() {
     return () => unsubscribe();
   }, []);
 
-  // Função Nativa para chamar o diálogo de PDF/Impressão do navegador
-  const handlePrint = () => {
-    // É recomendado dar um pequeno delay apenas se houverem animações na tela,
-    // mas na maioria dos casos o window.print() direto já resolve.
+  // Função assíncrona para salvar no Firebase e depois chamar a impressão
+  const handlePrint = async () => {
+    const currentUser = auth.currentUser;
+
+    // Tenta salvar no Firebase antes de abrir a tela de impressão
+    if (currentUser && userData && laudo) {
+      try {
+        // Converte o laudo (UTF-8) para Base64 de forma segura
+        const laudoBase64 = btoa(
+          new Uint8Array(new TextEncoder().encode(laudo)).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            "",
+          ),
+        );
+
+        const laudosRef = collection(db, "laudos");
+
+        // Estrutura do documento que será salvo no Firebase
+        await addDoc(laudosRef, {
+          userId: currentUser.uid,
+          paciente: userData.nomeCompleto || "Não informado",
+          cpf: userData.cpf || "Não informado",
+          conteudoLaudo: laudoBase64, // <-- Salvando em Base64
+          dataCriacao: new Date().toISOString().split("T")[0],
+          timestamp: new Date().toISOString(),
+          status: "Pendente",
+          medico: "João Marcos Santos da Silva",
+          crm: "CRM-MT 14316",
+          telefone: userData.telefone || "Não informado",
+        });
+
+        console.log("Laudo salvo em Base64 na coleção 'laudos' com sucesso!");
+      } catch (error) {
+        console.error("Erro ao salvar laudo no Firebase:", error);
+        alert(
+          "Aviso: Houve um erro ao salvar o laudo no sistema, mas você ainda pode imprimir.",
+        );
+      }
+    }
+
+    // Abre a janela de impressão nativa do navegador
     window.print();
 
-    navigate("/patient-area"); // Redireciona para a área do paciente após a impressão
+    // Redireciona para a área do paciente após a impressão
+    navigate("/patient-area");
   };
 
   if (isLoading) {
@@ -65,9 +102,8 @@ export default function PDFDownload() {
   const dataHoje = new Date().toLocaleDateString("pt-BR");
 
   return (
-    // NOTA: 'print:bg-white' garante que o fundo não saia bege no PDF
     <div className="min-h-screen bg-[#FDF9F3] print:bg-white flex flex-col items-center py-10 print:py-0 px-4 print:px-0 font-sans text-gray-900">
-      {/* Controles da Tela - A classe 'print:hidden' ESCONDE isso no PDF */}
+      {/* Controles da Tela (Escondido na impressão) */}
       <div className="max-w-4xl w-full flex flex-col items-center mb-8 print:hidden">
         <h1 className="text-3xl font-bold tracking-tight mb-2 text-center text-gray-900">
           Seu Laudo está Pronto
@@ -79,7 +115,10 @@ export default function PDFDownload() {
 
         <button
           onClick={handlePrint}
-          disabled={!laudo}
+          disabled={
+            !laudo ||
+            laudo === "Nenhum laudo clínico encontrado. Retorne à consulta."
+          }
           className="px-8 py-3 bg-[#34C759] text-white font-medium rounded-full hover:bg-[#2eaa4c] disabled:opacity-50 transition-all shadow-sm flex items-center gap-2"
         >
           <svg
@@ -101,9 +140,7 @@ export default function PDFDownload() {
       </div>
 
       {/* A Folha de Documento */}
-      {/* Removemos sombras, bordas e limites de largura na hora da impressão para ficar perfeito na folha */}
       <div className="w-full max-w-[210mm] bg-white shadow-2xl border border-gray-300 print:shadow-none print:border-none print:max-w-none print:w-full overflow-hidden">
-        {/* Usamos padding apenas na visualização da tela. Na impressão, a própria folha já tem margem */}
         <div className="bg-white text-gray-900 mx-auto px-10 py-12 print:px-0 print:py-0">
           {/* Cabeçalho */}
           <div className="border-b-2 border-gray-800 pb-4 mb-6 text-center">
@@ -111,7 +148,7 @@ export default function PDFDownload() {
               Laudo Médico para Uso de Cannabis Medicinal
             </h1>
             <p className="text-sm text-gray-600 mt-1">
-              Doutor: Assistente de IA Especializado em Medicina Canabinoide
+              Doutor: João Marcos Santos da Silva - CRM-MT 14316
             </p>
           </div>
 
@@ -151,6 +188,7 @@ export default function PDFDownload() {
             <ReactMarkdown>{laudo}</ReactMarkdown>
           </div>
 
+          {/* Assinatura */}
           <div className="mt-16 pt-6 border-t border-gray-800 flex flex-col items-center justify-center text-center print:break-inside-avoid">
             <div className="w-64 border-b-2 border-gray-800 mb-2"></div>
             <p className="font-bold text-[15px]">João Marcos Santos da Silva</p>
@@ -160,7 +198,6 @@ export default function PDFDownload() {
             <p className="text-[13px] text-gray-600 print:text-gray-800 mt-2">
               Data de Emissão: {dataHoje}
             </p>
-
             <div className="mt-4 flex flex-col items-center">
               <p className="text-[10px] text-gray-500 mb-1">
                 Assinado Digitalmente

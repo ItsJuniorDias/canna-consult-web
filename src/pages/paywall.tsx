@@ -1,25 +1,30 @@
 import React, { useState } from "react";
 import api from "../../service/axios";
+import { useNavigate } from "react-router-dom";
 
 export default function ConsultaCheckout() {
   const [isLoading, setIsLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   // Integração com o backend do Stripe
   const handleCheckout = async () => {
     setIsLoading(true);
     try {
-      // Endpoint da sua API que cria a sessão do Stripe Checkout
-      const response = await api.post("/api/checkout_sessions", {
-        priceId: "price_1TFYHERB4hnPW0iSEfHXhuni", // Substitua pelo seu Price ID
-      });
+      navigate("/checkout");
 
-      const data = response.data;
+      // // Endpoint da sua API que cria a sessão do Stripe Checkout
+      // const response = await api.post("/api/checkout_sessions", {
+      //   priceId: "price_1TFYHERB4hnPW0iSEfHXhuni", // Substitua pelo seu Price ID
+      // });
 
-      console.log("Resposta do backend:", data);
+      // const data = response.data;
 
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      // console.log("Resposta do backend:", data);
+
+      // if (data.url) {
+      //   window.location.href = data.url;
+      // }
     } catch (error) {
       console.error("Erro ao processar pagamento:", error);
       alert("Não foi possível iniciar o pagamento. Tente novamente.");
