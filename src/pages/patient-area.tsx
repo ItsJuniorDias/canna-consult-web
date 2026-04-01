@@ -111,9 +111,7 @@ export default function PatientArea() {
                 className="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#34C759] transition-colors"
               >
                 <FileText size={18} className="mr-3" />
-                <span className="text-sm font-medium">
-                  Minhas Receitas/Laudos
-                </span>
+                <span className="text-sm font-medium">Meus Laudos</span>
               </a>
             </li>
             <li>

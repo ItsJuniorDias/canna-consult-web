@@ -12,6 +12,7 @@ import {
   Search,
   Download,
   Loader2,
+  FileText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
@@ -106,7 +107,7 @@ export default function MyLaudos() {
                 href="#"
                 className="flex items-center px-6 py-3 bg-[#f0fdf4] text-[#34C759] border-l-4 border-[#34C759] transition-colors"
               >
-                <Folder size={18} className="mr-3" />
+                <FileText size={18} className="mr-3" />
                 <span className="text-sm font-medium">Meus Laudos</span>
               </a>
             </li>
