@@ -193,6 +193,8 @@ export default function MyConsultations() {
                 onClick={(e) => {
                   e.preventDefault();
                   auth.signOut();
+
+                  navigate("/login");
                 }}
                 href="#"
                 className="flex items-center px-6 py-2 text-gray-500 hover:text-[#34C759] transition-colors mt-2"

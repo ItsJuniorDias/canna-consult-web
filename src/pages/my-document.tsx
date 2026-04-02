@@ -147,35 +147,8 @@ export default function MyDocuments() {
     const newSessionId = uuidv4();
     setSessionId(newSessionId);
     setIsCaptureModalOpen(true);
+
     setCaptureStep("QR");
-
-    try {
-      await setDoc(doc(db, "captureSessions", newSessionId), {
-        status: "waiting",
-        frente: null,
-        verso: null,
-        createdAt: new Date(),
-      });
-
-      const unsubscribe = onSnapshot(
-        doc(db, "captureSessions", newSessionId),
-        (docSnap) => {
-          const data = docSnap.data();
-          if (data && data.status === "completed") {
-            setCapturedData({
-              qr: null,
-              frente: data.frente,
-              verso: data.verso,
-            });
-            setCaptureStep("CONCLUIDO");
-            if (unsubscribeRef.current) unsubscribeRef.current();
-          }
-        },
-      );
-      unsubscribeRef.current = unsubscribe;
-    } catch (error) {
-      console.error("Erro ao iniciar sessão de captura:", error);
-    }
   };
 
   // 2. Função de captura manual (Fallback Desktop)
@@ -398,6 +371,8 @@ export default function MyDocuments() {
                 onClick={(e) => {
                   e.preventDefault();
                   auth.signOut();
+
+                  navigate("/login");
                 }}
                 href="#"
                 className="flex items-center px-6 py-2 text-gray-500 hover:text-red-500 transition-colors mt-2"
