@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   CalendarPlus,
@@ -11,70 +11,99 @@ import {
   Info,
   MessageCircle,
   Leaf,
-  Calendar,
-  Clock,
   ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
-import { auth } from "../../firebaseConfig";
-
-// MOCKS DE DADOS
-const mockReceitas = [
-  // {
-  //   id: 1,
-  //   title: "Óleo CBD 10% Full Spectrum",
-  //   doctor: "Dr. Carlos Eduardo",
-  //   date: "31/03/2026",
-  //   status: "Ativa",
-  // },
-  // {
-  //   id: 2,
-  //   title: "Gomas THC/CBD 1:1",
-  //   doctor: "Dra. Ana Flávia",
-  //   date: "15/02/2026",
-  //   status: "Vencida",
-  // },
-];
-
-const mockConsultas = [
-  // {
-  //   id: 1,
-  //   doctor: "Dra. Ana Flávia",
-  //   specialty: "Clínica Médica",
-  //   date: "10/04/2026",
-  //   time: "14:30",
-  //   status: "Agendada",
-  // },
-  // {
-  //   id: 2,
-  //   doctor: "Dr. Carlos Eduardo",
-  //   specialty: "Neurologia",
-  //   date: "25/03/2026",
-  //   time: "09:00",
-  //   status: "Realizada",
-  // },
-];
+import { auth, db } from "../../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore"; // <-- Adicionados doc e getDoc
 
 export default function PatientArea() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Estados para os dados dinâmicos
+  const [userName, setUserName] = useState("Paciente"); // Valor inicial padrão
+  const [laudos, setLaudos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Monitora o estado de autenticação do usuário
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // 1. Busca os dados do usuário na coleção 'users'
+          const userDocRef = doc(db, "users", user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            // Define o nome usando o campo nomeCompleto do Firestore
+            setUserName(userData.nomeCompleto || "Paciente");
+          } else {
+            console.warn(
+              "Documento do usuário não encontrado na coleção 'users'.",
+            );
+          }
+
+          // 2. Busca os laudos específicos deste usuário logado no Firestore
+          const q = query(
+            collection(db, "laudos"),
+            where("userId", "==", user.uid),
+          );
+
+          const querySnapshot = await getDocs(q);
+          const laudosData = [];
+
+          querySnapshot.forEach((doc) => {
+            laudosData.push({ id: doc.id, ...doc.data() });
+          });
+
+          console.log("Laudos encontrados para o usuário:", laudosData);
+
+          setLaudos(laudosData);
+        } catch (error) {
+          console.error("Erro ao buscar dados no Firestore:", error);
+        }
+      } else {
+        // Se não houver usuário logado, redireciona para o login
+        navigate("/login");
+      }
+      setLoading(false);
+    });
+
+    // Limpeza do listener
+    return () => unsubscribe();
+  }, [navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f8f9f8]">
+        Carregando...
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#f8f9f8] font-sans text-gray-800">
       {/* Sidebar */}
       <aside className="w-64 bg-white flex flex-col shadow-[1px_0_5px_rgba(0,0,0,0.05)] z-10 sticky top-0 h-screen">
-        {/* Top Header / Logo Area */}
         <div className="h-32 bg-gradient-to-b from-[#34C759] to-[#5add7a] flex items-center justify-center shrink-0">
           <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-white shadow-sm">
             <Leaf size={24} />
           </div>
         </div>
 
-        {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1">
-            {/* Active Item - Dashboard */}
             <li>
               <a
                 href="#"
@@ -156,7 +185,6 @@ export default function PatientArea() {
           </ul>
         </nav>
 
-        {/* Bottom Navigation */}
         <div className="py-4 border-t border-gray-100 shrink-0">
           <ul className="space-y-1">
             <li>
@@ -189,7 +217,6 @@ export default function PatientArea() {
                 onClick={(e) => {
                   e.preventDefault();
                   auth.signOut();
-
                   navigate("/login");
                 }}
                 href="#"
@@ -209,12 +236,12 @@ export default function PatientArea() {
           {/* Greeting Card */}
           <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              Olá, Alexandre de paula dias junior
+              Olá, {userName}
             </h1>
             <p className="text-gray-500 text-sm">Seja bem vindo de volta.</p>
           </div>
 
-          {/* Alert Banner - Adicionado com base no Print */}
+          {/* Alert Banner */}
           <div className="bg-[#f9fbf8] border-l-4 border-[#34C759] border-y border-r border-y-[#eef3ea] border-r-[#eef3ea] rounded-xl p-6 shadow-sm flex items-start gap-4">
             <div className="p-3 bg-[#e8efe3] rounded-full text-[#34C759] shrink-0">
               <Folder size={24} />
@@ -237,27 +264,25 @@ export default function PatientArea() {
             </div>
           </div>
 
-          {/* Grid Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Receitas Card */}
+          {/* Grid Cards - Alterado para 1 coluna */}
+          <div className="grid grid-cols-1 gap-6">
+            {/* Receitas/Laudos Card */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Receitas
-                </h2>
+                <h2 className="text-lg font-bold text-gray-800">Meus Laudos</h2>
                 <button
                   onClick={() => navigate("/my-recipes")}
                   className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
                 >
-                  Ver todas
+                  Ver todos
                 </button>
               </div>
 
-              {mockReceitas.length > 0 ? (
+              {laudos?.length > 0 ? (
                 <div className="flex-1 flex flex-col gap-3">
-                  {mockReceitas.map((receita) => (
+                  {laudos.map((item) => (
                     <div
-                      key={receita.id}
+                      key={item?.userId}
                       className="flex items-center justify-between p-4 rounded-lg border border-gray-100 hover:border-[#34C759] transition-colors cursor-pointer group"
                     >
                       <div className="flex items-center gap-4">
@@ -266,21 +291,22 @@ export default function PatientArea() {
                         </div>
                         <div>
                           <h3 className="text-sm font-bold text-gray-800">
-                            {receita.title}
+                            {item?.paciente || "Laudo Médico"}
                           </h3>
                           <p className="text-xs text-gray-500 mt-0.5">
-                            {receita.doctor} • {receita.date}
+                            {item?.medico || "Médico"} •{" "}
+                            {item?.dataCriacao || "Sem data"}
                           </p>
                         </div>
                       </div>
                       <span
                         className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          receita.status === "Ativa"
+                          item.status === "Ativa"
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-500"
                         }`}
                       >
-                        {receita.status}
+                        {item.status || "Ativo"}
                       </span>
                     </div>
                   ))}
@@ -291,66 +317,7 @@ export default function PatientArea() {
                     <Info size={28} className="text-gray-300" />
                   </div>
                   <p className="text-sm font-medium">
-                    Nenhuma receita encontrada.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Consultas Card */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 min-h-[350px] flex flex-col">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Minhas Consultas
-                </h2>
-                <button
-                  onClick={() => navigate("/my-consultations")}
-                  className="text-sm text-[#34C759] hover:text-[#2eaa4d] font-semibold transition-colors"
-                >
-                  Ver todas
-                </button>
-              </div>
-
-              {mockConsultas.length > 0 ? (
-                <div className="flex-1 flex flex-col gap-3">
-                  {mockConsultas.map((consulta) => (
-                    <div
-                      key={consulta.id}
-                      className="flex items-center justify-between p-4 rounded-lg border border-gray-100 hover:border-[#34C759] transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-[#f0fdf4] text-[#34C759] rounded-lg group-hover:bg-[#34C759] group-hover:text-white transition-colors">
-                          <Stethoscope size={20} />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-gray-800">
-                            {consulta.doctor}
-                          </h3>
-                          <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                            <Calendar size={12} /> {consulta.date}
-                            <Clock size={12} className="ml-1" /> {consulta.time}
-                          </div>
-                        </div>
-                      </div>
-                      <span
-                        className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          consulta.status === "Agendada"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {consulta.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                  <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                    <Info size={28} className="text-gray-300" />
-                  </div>
-                  <p className="text-sm font-medium">
-                    Nenhuma consulta encontrada.
+                    Nenhum laudo encontrado.
                   </p>
                 </div>
               )}
@@ -363,7 +330,7 @@ export default function PatientArea() {
         <ModalHelper setIsHelpModalOpen={setIsHelpModalOpen} />
       )}
 
-      {/* Floating Action Button (Chat) */}
+      {/* Floating Action Button */}
       <button className="fixed bottom-8 right-8 w-14 h-14 bg-[#34C759] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#2eaa4d] transition-colors z-50">
         <MessageCircle size={24} />
       </button>

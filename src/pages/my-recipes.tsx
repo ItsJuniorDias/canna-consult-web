@@ -17,7 +17,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import ModalHelper from "../components/modal";
 import { auth, db } from "../../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function MyLaudos() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -29,31 +30,43 @@ export default function MyLaudos() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        setLoading(true);
-        // const user = auth.currentUser;
+    // onAuthStateChanged garante que aguardamos o Firebase carregar o usuário logado
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          setLoading(true);
 
-        // Buscando Laudos na coleção "laudos"
-        const laudosRef = collection(db, "laudos");
-        const laudosSnapshot = await getDocs(laudosRef);
-        const laudosData = laudosSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+          // Buscando Laudos na coleção "laudos"
+          const laudosRef = collection(db, "laudos");
 
-        setLaudosList(laudosData);
-      } catch (error) {
-        console.error("Erro ao buscar dados do Firestore:", error);
-      } finally {
+          // Filtra diretamente no banco para trazer apenas os laudos do usuário logado
+          // IMPORTANTE: Altere "userId" se o nome do campo no seu banco for diferente
+          const q = query(laudosRef, where("userId", "==", user.uid));
+
+          const laudosSnapshot = await getDocs(q);
+          const laudosData = laudosSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+
+          setLaudosList(laudosData);
+        } catch (error) {
+          console.error("Erro ao buscar dados do Firestore:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Se não houver usuário logado, limpa a lista
+        setLaudosList([]);
         setLoading(false);
       }
-    };
+    });
 
-    fetchDocuments();
+    // Limpa o listener ao desmontar o componente
+    return () => unsubscribe();
   }, []);
 
-  // Lógica de filtro atualizada para buscar por médico ou paciente
+  // Lógica de filtro local para buscar por médico ou paciente dentro dos laudos já retornados
   const filteredData = laudosList.filter(
     (item) =>
       item.medico?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -185,7 +198,6 @@ export default function MyLaudos() {
                 onClick={(e) => {
                   e.preventDefault();
                   auth.signOut();
-
                   navigate("/login");
                 }}
                 href="#"
@@ -214,7 +226,7 @@ export default function MyLaudos() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 min-h-[450px] flex flex-col">
             <div className="p-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-lg font-bold text-gray-800">
-                Lista de Laudos ({laudosList.length})
+                Lista de Laudos ({filteredData.length})
               </h2>
 
               <div className="relative w-full sm:w-72">
@@ -255,7 +267,6 @@ export default function MyLaudos() {
                         <Folder size={24} />
                       </div>
                       <div>
-                        {/* Utilizando os dados reais: paciente e medico */}
                         <h3 className="text-base font-bold text-gray-800">
                           Laudo - Paciente: {item.paciente}
                         </h3>
@@ -276,7 +287,6 @@ export default function MyLaudos() {
                       >
                         {item.status || "Disponível"}
                       </span>
-                      {/* O botão agora é um link apontando para urlAssinado */}
                       {item.urlAssinado ? (
                         <a
                           href={item.urlAssinado}
